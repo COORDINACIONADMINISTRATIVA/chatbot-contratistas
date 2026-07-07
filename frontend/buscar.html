@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscar por Cédula - Asistente de Contratación</title>
+    <link rel="stylesheet" href="/static/css/estilos.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1>🔍 Buscar por Cédula</h1>
+                <p>Consulta el estado de un contratista</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- TABS DE NAVEGACIÓN -->
+    <nav class="tabs">
+        <div class="tabs-container">
+            <a href="/" class="tab"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
+            <a href="/consultas" class="tab"><span class="tab-icon">📚</span><span>Consultas</span></a>
+            <a href="/login" class="tab"><span class="tab-icon">⚙️</span><span>Admin</span></a>
+        </div>
+    </nav>
+
+
+    <!-- CONTENIDO -->
+    <div class="container">
+        <div class="card">
+            <h2>🔍 Buscar Contratista</h2>
+            <p style="color: #666; margin-bottom: 20px;">Ingresa el número de cédula para ver toda la información del contratista.</p>
+            
+            <div class="search-box">
+                <input type="text" id="cedula-input" placeholder="Ej: 1234567890" 
+                       onkeypress="if(event.key==='Enter') buscarCedula()">
+                <button onclick="buscarCedula()">🔍 Buscar</button>
+            </div>
+        </div>
+
+        <!-- RESULTADO -->
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        async function buscarCedula() {
+            const input = document.getElementById('cedula-input');
+            const cedula = input.value.trim();
+            const resultadoDiv = document.getElementById('resultado');
+            
+            if (!cedula) {
+                resultadoDiv.innerHTML = '<div class="alert alert-warning">⚠️ Ingresa una cédula</div>';
+                return;
+            }
+            
+            resultadoDiv.innerHTML = '<div class="card"><p>🔍 Buscando...</p></div>';
+            
+            try {
+                const response = await fetch('/api/contratista', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cedula })
+                });
+                
+                const data = await response.json();
+                
+                if (!data.encontrado) {
+                    resultadoDiv.innerHTML = '<div class="alert alert-warning">❌ ' + data.mensaje + '</div>';
+                    return;
+                }
+                
+                let html = '';
+                data.contratistas.forEach((c, index) => {
+                    html += `
+                        <div class="card">
+                            <h2>📋 ${c.nombre}</h2>
+                            <div class="alert alert-info">
+                                <strong>🆔 Cédula:</strong> ${c.cedula}<br>
+                                <strong>📅 Año:</strong> ${c.año}
+                            </div>
+                            
+                            <h3>📊 Estado</h3>
+                            <div class="alert alert-warning">${c.estado}</div>
+                            
+                            <h3>📝 Observación</h3>
+                            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; white-space: pre-wrap; line-height: 1.6;">${c.observacion}</div>
+                        </div>
+                    `;
+                });
+                
+                if (data.cantidad > 1) {
+                    html = `<div class="alert alert-info">📋 Se encontraron <strong>${data.cantidad}</strong> contratos para esta cédula</div>` + html;
+                }
+                
+                resultadoDiv.innerHTML = html;
+                
+            } catch (error) {
+                resultadoDiv.innerHTML = '<div class="alert alert-danger">❌ Error al buscar. Verifica que el servidor esté corriendo.</div>';
+            }
+        }
+    </script>
+</body>
+</html>

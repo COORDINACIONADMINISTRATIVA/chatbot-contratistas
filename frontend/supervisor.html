@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Supervisora - Asistente de Contratación</title>
+    <link rel="stylesheet" href="/static/css/estilos.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <!-- Loading -->
+    <div id="loading" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column;">
+        <h2>🔄 Verificando sesión...</h2>
+        <p>Si no carga en 3 segundos, <a href="/login">haz clic aquí</a></p>
+    </div>
+
+    <!-- HEADER -->
+    <header class="header" style="display: none;" id="header-content">
+        <div class="header-content">
+            <div>
+                <h1>📊 Panel Supervisora</h1>
+                <p>Análisis y métricas de contratistas</p>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-danger" onclick="logout()">Cerrar sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- TABS -->
+    <nav class="tabs" style="display: none;" id="tabs-content">
+        <div class="tabs-container">
+            <a href="/" class="tab"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
+            <a href="/consultas" class="tab"><span class="tab-icon">📚</span><span>Consultas</span></a>
+            <a href="/login" class="tab active"><span class="tab-icon">⚙️</span><span>Admin</span></a>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO -->
+    <div class="container" style="display: none;" id="dashboard-content">
+        <h2 style="color: #003a70; margin-bottom: 15px;">📊 Resumen General de Contratistas</h2>
+
+        <div class="stats-grid">
+            <div class="stat-card"><h2 id="totalContratistas">0</h2><p>👥 Contratistas únicos</p></div>
+            <div class="stat-card green"><h2 id="totalContratos">0</h2><p>📋 Total contratos</p></div>
+            <div class="stat-card blue"><h2 id="promedioContratos">0</h2><p>📊 Promedio contratos/persona</p></div>
+            <div class="stat-card purple"><h2 id="totalChat">0</h2><p>💬 Consultas al chatbot</p></div>
+            <div class="stat-card orange"><h2 id="totalCedulasChat">0</h2><p>🆔 Cédulas consultadas</p></div>
+        </div>
+
+        <!-- DISTRIBUCIÓN DE ESTADOS -->
+        <div class="card">
+            <h2>📊 Distribución de Estados de Contratos</h2>
+            <p style="color: #666; margin-bottom: 15px;">Cuántos contratos están en cada estado</p>
+            <div class="charts-grid">
+                <div class="chart-box"><h3>Estados (Top 10)</h3><canvas id="chartEstados"></canvas></div>
+                <div class="chart-box"><h3>Categorías del Chatbot</h3><canvas id="chartCategorias"></canvas></div>
+            </div>
+        </div>
+
+        <!-- TOP CONTRATISTAS CON PROBLEMAS -->
+        <div class="card">
+            <h2>⚠️ Top Contratistas con Más Problemas</h2>
+            <p style="color: #666; margin-bottom: 15px;">Contratistas que más dificultades han tenido en el proceso</p>
+            <table>
+                <thead><tr><th>#</th><th>Cédula</th><th>Nombre</th><th>Contratos</th><th>Problemas</th><th>Tipo principal</th></tr></thead>
+                <tbody id="top-problemas"></tbody>
+            </table>
+        </div>
+
+        <!-- TIPOS DE PROBLEMAS -->
+        <div class="card">
+            <h2>📈 Análisis de Problemas</h2>
+            <p style="color: #666; margin-bottom: 15px;">Tipos de problemas más frecuentes</p>
+            <div class="charts-grid">
+                <div class="chart-box"><h3>Tipos de Problemas</h3><canvas id="chartProblemas"></canvas></div>
+                <div class="chart-box"><h3>Contratos por Año</h3><canvas id="chartAnios"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let chartEstados = null, chartCategorias = null, chartProblemas = null, chartAnios = null;
+
+        window.addEventListener('DOMContentLoaded', function() {
+            verificarSesion();
+        });
+
+        async function verificarSesion() {
+            console.log('🔍 Verificando sesión para supervisor...');
+            
+            try {
+                const r = await fetch('/api/supervisor/dashboard', {
+                    credentials: 'include'
+                });
+                
+                console.log('📥 Status del dashboard:', r.status);
+                
+                if (r.ok) {
+                    const data = await r.json();
+                    console.log('📊 Datos recibidos:', data);
+                    mostrarDashboard(data);
+                } else if (r.status === 401) {
+                    console.log('❌ No autorizado, redirigiendo a login');
+                    // Limpiar localStorage y redirigir
+                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('userRole');
+                    window.location.href = '/login';
+                } else {
+                    mostrarError('Error al cargar datos del supervisor');
+                }
+            } catch (e) {
+                console.error('❌ Error:', e);
+                mostrarError('Error de conexión');
+            }
+        }
+
+        function mostrarDashboard(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('header-content').style.display = 'block';
+            document.getElementById('tabs-content').style.display = 'block';
+            document.getElementById('dashboard-content').style.display = 'block';
+
+            // Actualizar estadísticas
+            document.getElementById('totalContratistas').textContent = data.total_contratistas_unicos || 0;
+            document.getElementById('totalContratos').textContent = data.total_contratos || 0;
+            document.getElementById('promedioContratos').textContent = data.promedio_contratos || 0;
+            document.getElementById('totalChat').textContent = data.chat?.total_consultas || 0;
+            document.getElementById('totalCedulasChat').textContent = data.chat?.cedulas_consultadas || 0;
+
+            // Gráfica de estados
+            if (chartEstados) chartEstados.destroy();
+            const estadosLabels = data.estados?.labels?.slice(0, 10) || [];
+            const estadosValues = data.estados?.values?.slice(0, 10) || [];
+            chartEstados = new Chart(document.getElementById('chartEstados'), {
+                type: 'bar',
+                data: {
+                    labels: estadosLabels.map(l => l.length > 30 ? l.substring(0, 30) + '...' : l),
+                    datasets: [{
+                        label: 'Cantidad',
+                        data: estadosValues,
+                        backgroundColor: '#003a70'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    indexAxis: 'y',
+                    plugins: {legend: {display: false}}
+                }
+            });
+
+            // Gráfica de categorías del chatbot
+            if (chartCategorias) chartCategorias.destroy();
+            const cat = data.chat?.categorias || {};
+            chartCategorias = new Chart(document.getElementById('chartCategorias'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Documentos', 'Portal', 'RUT', 'Pagos', 'Problemas', 'Llenar'],
+                    datasets: [{
+                        data: [cat.documentos || 0, cat.portal || 0, cat.rut || 0, cat.pagos || 0, cat.problemas || 0, cat.llenar || 0],
+                        backgroundColor: ['#003a70', '#28a745', '#fd7e14', '#e83e8c', '#dc3545', '#17a2b8']
+                    }]
+                },
+                options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
+            });
+
+            // Top problemas
+            const tbody = document.getElementById('top-problemas');
+            const top = data.top_problemas || [];
+            tbody.innerHTML = top.slice(0, 15).map((c, i) => `
+                <tr>
+                    <td>${i + 1}</td>
+                    <td>${c.cedula}</td>
+                    <td>${c.nombre}</td>
+                    <td>${c.total_contratos}</td>
+                    <td><span class="badge badge-danger">${c.total_problemas}</span></td>
+                    <td>${c.tipo_principal || '-'}</td>
+                </tr>
+            `).join('') || '<tr><td colspan="6" style="text-align:center; color:#999;">No hay datos</td></tr>';
+
+            // Gráfica de tipos de problemas
+            if (chartProblemas) chartProblemas.destroy();
+            const problemasLabels = Object.keys(data.tipos_problemas || {});
+            const problemasValues = Object.values(data.tipos_problemas || {});
+            chartProblemas = new Chart(document.getElementById('chartProblemas'), {
+                type: 'pie',
+                data: {
+                    labels: problemasLabels.map(l => l.length > 25 ? l.substring(0, 25) + '...' : l),
+                    datasets: [{
+                        data: problemasValues,
+                        backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#17a2b8', '#6f42c1', '#28a745', '#e83e8c', '#003a70', '#20c997', '#6c757d']
+                    }]
+                },
+                options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'right'}}}
+            });
+
+            // Gráfica de años
+            if (chartAnios) chartAnios.destroy();
+            const aniosLabels = Object.keys(data.por_anio || {});
+            const aniosValues = Object.values(data.por_anio || {});
+            chartAnios = new Chart(document.getElementById('chartAnios'), {
+                type: 'doughnut',
+                data: {
+                    labels: aniosLabels,
+                    datasets: [{
+                        data: aniosValues,
+                        backgroundColor: ['#003a70', '#0066cc', '#17a2b8', '#28a745']
+                    }]
+                },
+                options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
+            });
+        }
+
+        function mostrarError(msg) {
+            document.getElementById('loading').innerHTML = 
+                '<h2>❌ ' + msg + '</h2><p><a href="/login" style="color:#003a70;">Volver al login</a></p>';
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/admin/logout', {method: 'POST', credentials: 'include'});
+            } catch (e) {}
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userRole');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

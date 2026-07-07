@@ -1,0 +1,99 @@
+{
+  "intents": [
+    {
+      "tag": "saludo",
+      "patrones": [
+        "hola", "buenas", "buenos dias", "buenas tardes", "buenas noches",
+        "hey", "que tal", "hola como estas", "quisiera informacion",
+        "necesito ayuda", "me puedes ayudar"
+      ]
+    },
+    {
+      "tag": "subir_rut",
+      "patrones": [
+        "quiero subir mi rut", "como subo el rut", "necesito validar mi rut",
+        "revisar mi rut", "analizar mi rut", "verificar mi rut",
+        "quiero que revises mi rut", "subir el documento del rut",
+        "cargar mi rut", "adjuntar mi rut", "enviar mi rut para revision",
+        "quiero saber si mi rut esta bien", "puedo mandar el rut aqui"
+      ]
+    },
+    {
+      "tag": "actualizar_rut",
+      "patrones": [
+        "como actualizo el rut", "necesito actualizar el rut",
+        "donde actualizo mi rut", "el rut esta vencido",
+        "hace cuanto debe ser el rut", "cada cuanto debo actualizar el rut",
+        "mi rut esta en tramite", "que actividad economica debe tener el rut",
+        "codigo de actividad economica para el rut", "que marca de agua debe tener el rut"
+      ]
+    },
+    {
+      "tag": "portal_proveedores",
+      "patrones": [
+        "como me registro en la plataforma", "donde me inscribo como proveedor",
+        "cual es el link del portal", "no encuentro el portal de proveedores",
+        "como creo mi usuario en el portal", "quiero registrarme como proveedor",
+        "donde hago el registro inicial", "necesito el enlace de inscripcion"
+      ]
+    },
+    {
+      "tag": "documentos_natural",
+      "patrones": [
+        "que documentos necesito como persona natural",
+        "que papeles debo enviar si soy independiente",
+        "documentos para persona natural", "soy persona natural que necesito",
+        "que me piden si no tengo empresa", "requisitos persona natural"
+      ]
+    },
+    {
+      "tag": "documentos_juridica",
+      "patrones": [
+        "que documentos necesita una empresa", "somos persona juridica que necesitamos",
+        "documentos para camara de comercio", "requisitos si soy una empresa",
+        "que papeles pide el representante legal", "documentos persona juridica"
+      ]
+    },
+    {
+      "tag": "documentos_requeridos",
+      "patrones": [
+        "que documentos necesito", "que papeles debo enviar",
+        "que me piden para el contrato", "cuales son los requisitos",
+        "que necesito para contratar", "lista de documentos"
+      ]
+    },
+    {
+      "tag": "llenar_plataforma",
+      "patrones": [
+        "como lleno el formulario", "que pongo en el campo de sede",
+        "que es el regimen simplificado o comun", "que tratamiento selecciono",
+        "que codigo postal pongo", "que va en persona de contacto",
+        "no se que poner en un campo del formulario", "ayuda para llenar el registro"
+      ]
+    },
+    {
+      "tag": "problemas_registro",
+      "patrones": [
+        "se rechazo mi registro", "no me deja subir los documentos",
+        "hay un error en la plataforma", "me equivoque de sede",
+        "el sistema no funciona", "no puedo terminar el registro",
+        "por que rechazaron mi solicitud", "tengo un problema con el portal"
+      ]
+    },
+    {
+      "tag": "estado_pago",
+      "patrones": [
+        "ya me pagaron", "cuando me pagan", "como esta mi pago",
+        "estado de mi factura", "cuando sale el pago",
+        "no me han pagado", "informacion sobre mi pago"
+      ]
+    },
+    {
+      "tag": "fuera_de_alcance",
+      "patrones": [
+        "cual es la capital de francia", "cuentame un chiste",
+        "que hora es", "hablame del clima", "quien eres tu"
+      ]
+    }
+  ]
+}

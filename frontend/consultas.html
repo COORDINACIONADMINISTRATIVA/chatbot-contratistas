@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consultas - Asistente de Contratación</title>
+    <link rel="stylesheet" href="/static/css/estilos.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1>📚 Centro de Consultas</h1>
+                <p>Preguntas frecuentes sobre el proceso</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- TABS DE NAVEGACIÓN -->
+    <nav class="tabs">
+        <div class="tabs-container">
+            <a href="/" class="tab"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
+            <a href="/consultas" class="tab active"><span class="tab-icon">📚</span><span>Consultas</span></a>
+            <a href="/login" class="tab"><span class="tab-icon">⚙️</span><span>Admin</span></a>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO -->
+    <div class="container">
+        <div class="main-content">
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                <h3>💡 Temas disponibles</h3>
+                <ul class="quick-questions">
+                    <li onclick="enviarPregunta('qué documentos necesito')">📋 Documentos</li>
+                    <li onclick="enviarPregunta('cómo me registro en el portal de proveedores')">🌐 Portal</li>
+                    <li onclick="enviarPregunta('tengo problemas con el portal')">⚠️ Problemas</li>
+                    <li onclick="enviarPregunta('estado de mis pagos')">💰 Pagos</li>
+                    <li onclick="enviarPregunta('cómo actualizo mi RUT')">📝 RUT</li>
+                    <li onclick="enviarPregunta('cómo lleno la plataforma')">🔧 Llenar plataforma</li>
+                </ul>
+                <div class="info-box">
+                    <h4>ℹ️ Solo info general</h4>
+                    <p>Esta sección es para preguntas generales. Para ver tu proceso, ve a "Mi Proceso".</p>
+                </div>
+            </aside>
+
+            <!-- CHAT -->
+            <section class="chat-container">
+                <div class="chat-header">
+                    <div class="bot-avatar">📚</div>
+                    <div>
+                        <h2>Centro de Consultas</h2>
+                        <span class="status">● En línea</span>
+                    </div>
+                </div>
+
+                <div id="chat-box" class="chat-box">
+                    <div class="message bot-message">
+                        <div class="message-content">¡Hola! 👋 Bienvenido al centro de consultas.
+
+Aquí puedes preguntar sobre el proceso de contratación en general. Selecciona un tema del menú lateral o escribe tu pregunta.
+
+⚠️ Importante: En esta sección NO consulto cédulas. Si quieres ver tu estado, ve a "Mi Proceso".</div>
+                        <span class="message-time">Ahora</span>
+                    </div>
+                </div>
+
+                <div class="chat-input-container">
+                    <input type="text" id="user-input" placeholder="Escribe tu pregunta..." 
+                           onkeypress="if(event.key==='Enter') enviarPregunta()">
+                    <button onclick="enviarPregunta()" id="send-btn">Preguntar</button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api/chat';
+        let usuarioId = 'consulta_' + Math.random().toString(36).substr(2, 9);
+
+        function agregarMensaje(texto, tipo) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${tipo}-message`;
+            
+            const time = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+            
+            messageDiv.innerHTML = `
+                <div class="message-content">${texto.replace(/\n/g, '<br>')}</div>
+                <span class="message-time">${time}</span>
+            `;
+            
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function enviarPregunta(pregunta = null) {
+            const input = document.getElementById('user-input');
+            const mensaje = pregunta || input.value.trim();
+            
+            if (!mensaje) return;
+            
+            agregarMensaje(mensaje, 'user');
+            if (!pregunta) input.value = '';
+            
+            // Detectar si es una cédula
+            const cedulaPattern = /\b\d{6,12}\b/;
+            if (cedulaPattern.test(mensaje)) {
+                agregarMensaje(
+                    '⚠️ En esta sección NO se consultan cédulas.\n\n' +
+                    'Para ver el estado de tu proceso, ve a la pestaña "Mi Proceso" e ingresa tu cédula allí.\n\n' +
+                    'Aquí solo puedo responder preguntas generales sobre el proceso de contratación.',
+                    'bot'
+                );
+                return;
+            }
+            
+            const typing = document.createElement('div');
+            typing.className = 'message bot-message';
+            typing.innerHTML = '<div class="message-content">⏳ Escribiendo...</div>';
+            document.getElementById('chat-box').appendChild(typing);
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ mensaje, usuario: usuarioId })
+                });
+                const data = await response.json();
+                typing.remove();
+                agregarMensaje(data.respuesta, 'bot');
+            } catch (error) {
+                typing.remove();
+                agregarMensaje('❌ Error de conexión', 'bot');
+            }
+        }
+
+        function enviarPreguntaRapida(pregunta) {
+            enviarPregunta(pregunta);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Proceso - Asistente de Contratación</title>
+    <link rel="stylesheet" href="/static/css/estilos.css">
+    <style>
+        .contrato-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
+            border-left: 5px solid #003a70;
+        }
+        .contrato-card h2 {
+            color: #003a70;
+            margin-bottom: 15px;
+        }
+        .info-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            background: #f8f9fa;
+            padding: 12px;
+            border-radius: 8px;
+        }
+        .info-item strong {
+            display: block;
+            color: #003a70;
+            font-size: 0.85em;
+            margin-bottom: 4px;
+        }
+        .estado-box {
+            background: #fff4e6;
+            border-left: 4px solid #fd7e14;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+        .estado-box strong {
+            color: #fd7e14;
+        }
+        .historial-box {
+            background: #f0f7ff;
+            border-left: 4px solid #003a70;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            line-height: 1.7;
+            white-space: pre-wrap;
+        }
+        .historial-box strong {
+            color: #003a70;
+        }
+        .upload-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            padding: 20px;
+            background: #f8f9fa;
+            border: 2px dashed #ddd;
+            border-radius: 12px;
+            margin-top: 10px;
+        }
+        .upload-area .btn-upload {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 28px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 1em;
+            transition: background 0.2s;
+        }
+        .upload-area .btn-upload:hover {
+            background: #218838;
+        }
+        .upload-area .btn-upload:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        .upload-status {
+            font-size: 0.9em;
+            color: #666;
+        }
+        .upload-status.success { color: #28a745; }
+        .upload-status.error { color: #dc3545; }
+        .upload-status.loading { color: #fd7e14; }
+        #resultado-rut {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f0f7ff;
+            border-left: 4px solid #003a70;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            display: none;
+        }
+        #resultado-rut.show { display: block; }
+    </style>
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-content">
+            <div>
+                <h1>🔍 Mi Proceso</h1>
+                <p>Consulta el estado de tu contratación</p>
+            </div>
+        </div>
+    </header>
+
+    <!-- TABS DE NAVEGACIÓN -->
+    <nav class="tabs">
+        <div class="tabs-container">
+            <a href="/" class="tab active"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
+            <a href="/consultas" class="tab"><span class="tab-icon">📚</span><span>Consultas</span></a>
+            <a href="/login" class="tab"><span class="tab-icon">⚙️</span><span>Admin</span></a>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO -->
+    <div class="container">
+        <div class="card">
+            <h2>🔍 Consultar Mi Proceso</h2>
+            <p style="color: #666; margin-bottom: 20px;">Ingresa tu número de cédula para ver el estado actual y el historial de tu proceso.</p>
+            
+            <div class="search-box">
+                <input type="text" id="cedula-input" placeholder="Ej: 1234567890" 
+                       onkeypress="if(event.key==='Enter') buscarCedula()">
+                <button onclick="buscarCedula()">🔍 Consultar</button>
+            </div>
+        </div>
+
+        <!-- RESULTADO DE CONSULTA -->
+        <div id="resultado"></div>
+
+        <!-- ÁREA DE SUBIDA DE RUT -->
+        <div class="card" style="margin-top: 20px;">
+            <h2>📄 Validar mi RUT</h2>
+            <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">
+                Sube tu RUT en formato PDF para que lo revisemos automáticamente.
+            </p>
+            
+            <div class="upload-area">
+                <input type="file" id="rut-file" accept=".pdf" style="display:none;" onchange="subirRut()">
+                <button class="btn-upload" onclick="document.getElementById('rut-file').click()" id="btn-upload-rut">
+                    📄 Seleccionar RUT (PDF)
+                </button>
+                <span class="upload-status" id="upload-status">Archivo seleccionado: Ninguno</span>
+            </div>
+
+            <!-- Resultado del análisis del RUT -->
+            <div id="resultado-rut"></div>
+        </div>
+    </div>
+
+    <script>
+        // ========== GUARDAR CÉDULA EN LOCALSTORAGE ==========
+        function guardarCedula(cedula) {
+            if (cedula) {
+                localStorage.setItem('ultima_cedula', cedula);
+            }
+        }
+
+        // ========== CONSULTAR CÉDULA ==========
+        async function buscarCedula() {
+            const input = document.getElementById('cedula-input');
+            const cedula = input.value.trim();
+            const resultadoDiv = document.getElementById('resultado');
+            
+            if (!cedula) {
+                resultadoDiv.innerHTML = '<div class="alert alert-warning">⚠️ Ingresa una cédula</div>';
+                return;
+            }
+            
+            resultadoDiv.innerHTML = '<div class="card"><p>🔍 Buscando información...</p></div>';
+            
+            try {
+                const response = await fetch('/api/mi-proceso', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ cedula })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    resultadoDiv.innerHTML = '<div class="alert alert-danger">❌ ' + data.error + '</div>';
+                    return;
+                }
+                
+                if (!data.encontrado) {
+                    resultadoDiv.innerHTML = '<div class="alert alert-warning">❌ ' + data.mensaje + '</div>';
+                    return;
+                }
+                
+                // ===== GUARDAR CÉDULA PARA SUBIR RUT =====
+                if (data.encontrado && data.contratistas.length > 0) {
+                    guardarCedula(data.contratistas[0].cedula);
+                }
+                
+                let html = '';
+                
+                if (data.cantidad > 1) {
+                    html += '<div class="alert alert-info">📋 Tienes <strong>' + data.cantidad + '</strong> contratos registrados. Te mostramos el detalle de cada uno.</div>';
+                }
+                
+                data.contratistas.forEach((c, index) => {
+                    const numContrato = data.cantidad > 1 ? '<div class="alert alert-warning"><strong>📄 CONTRATO #' + (index + 1) + '</strong></div>' : '';
+                    
+                    html += '<div class="contrato-card">';
+                    html += numContrato;
+                    html += '<h2>👤 ' + (c.nombre || 'Sin nombre') + '</h2>';
+                    
+                    html += '<div class="info-row">';
+                    html += '<div class="info-item"><strong>🆔 Cédula</strong>' + (c.cedula || '-') + '</div>';
+                    html += '<div class="info-item"><strong>📅 Año</strong>' + (c.año || '-') + '</div>';
+                    html += '</div>';
+                    
+                    html += '<div class="estado-box">';
+                    html += '<strong>📊 Estado actual:</strong><br>';
+                    html += c.estado || 'Sin estado registrado';
+                    html += '</div>';
+                    
+                    html += '<h3>📝 Historial del Proceso</h3>';
+                    html += '<div class="historial-box">';
+                    html += c.observacion || '📋 No hay información adicional registrada en este momento.';
+                    html += '</div>';
+                    
+                    html += '</div>';
+                });
+                
+                resultadoDiv.innerHTML = html;
+                
+            } catch (error) {
+                console.error('Error completo:', error);
+                resultadoDiv.innerHTML = '<div class="alert alert-danger">❌ Error al buscar. Verifica tu conexión e intenta de nuevo.</div>';
+            }
+        }
+
+        // ========== SUBIR RUT ==========
+        function renderDatosRutTabla(datos) {
+            const etiquetas = {
+                tipo_documento: 'Tipo de documento',
+                numero_identificacion: 'Identificación',
+                tipo_contribuyente: 'Tipo de contribuyente',
+                nombre_completo: 'Nombre / Razón social',
+                direccion: 'Dirección',
+                correo: 'Correo',
+                telefonos: 'Teléfono(s)',
+                actividades_economicas: 'Actividad(es) económica(s)',
+                responsabilidades_calidades_atributos: 'Responsabilidades',
+                fecha_actualizacion_rut: 'Fecha actualización RUT',
+                fecha_generacion_pdf: 'Fecha generación PDF',
+                marca_agua_detalle: 'Marca de agua'
+            };
+
+            let filas = '';
+            for (const [clave, etiqueta] of Object.entries(etiquetas)) {
+                let valor = datos[clave];
+                if (valor === null || valor === undefined || valor === '') continue;
+
+                if (clave === 'telefonos' && Array.isArray(valor)) {
+                    valor = valor.join(', ');
+                } else if (clave === 'actividades_economicas' && Array.isArray(valor)) {
+                    valor = valor.map(a => `${a.codigo} (inicio: ${a.fecha_inicio})`).join(', ');
+                } else if (clave === 'responsabilidades_calidades_atributos' && Array.isArray(valor)) {
+                    valor = valor.join(', ');
+                }
+
+                filas += `<tr><td style="padding:4px 10px;font-weight:600;white-space:nowrap;">${etiqueta}</td><td style="padding:4px 10px;">${valor}</td></tr>`;
+            }
+
+            if (!filas) return '';
+
+            return `
+                <div style="margin-top:14px;">
+                    <strong>📄 Datos extraídos del RUT (JSON):</strong>
+                    <table style="margin-top:6px;border-collapse:collapse;font-size:0.92em;">${filas}</table>
+                </div>`;
+        }
+
+        async function subirRut() {
+            const fileInput = document.getElementById('rut-file');
+            const statusEl = document.getElementById('upload-status');
+            const resultadoRut = document.getElementById('resultado-rut');
+            const btnUpload = document.getElementById('btn-upload-rut');
+            
+            const file = fileInput.files[0];
+            if (!file) {
+                statusEl.textContent = '❌ No seleccionaste ningún archivo';
+                statusEl.className = 'upload-status error';
+                return;
+            }
+            
+            // Verificar que sea PDF
+            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                statusEl.textContent = '❌ El archivo debe ser PDF';
+                statusEl.className = 'upload-status error';
+                fileInput.value = '';
+                return;
+            }
+            
+            // Verificar tamaño (máximo 10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                statusEl.textContent = '❌ El archivo es demasiado grande (máx 10MB)';
+                statusEl.className = 'upload-status error';
+                fileInput.value = '';
+                return;
+            }
+            
+            statusEl.textContent = '⏳ Subiendo y analizando RUT...';
+            statusEl.className = 'upload-status loading';
+            btnUpload.disabled = true;
+            resultadoRut.className = '';
+            resultadoRut.style.display = 'none';
+            
+            // Crear FormData
+            const formData = new FormData();
+            formData.append('rut', file);
+            
+            // Obtener cédula del input o del localStorage
+            let cedula = document.getElementById('cedula-input').value.trim();
+            if (!cedula) {
+                cedula = localStorage.getItem('ultima_cedula') || '';
+            }
+            if (cedula) {
+                formData.append('cedula', cedula);
+            }
+            
+            try {
+                const response = await fetch('/api/validar-rut', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    statusEl.textContent = '❌ ' + data.error;
+                    statusEl.className = 'upload-status error';
+                    btnUpload.disabled = false;
+                    return;
+                }
+                
+                // Mostrar resultado
+                resultadoRut.innerHTML = data.respuesta || '✅ RUT analizado correctamente';
+
+                // Mostrar además el JSON de datos extraídos en una tabla legible
+                if (data.datos_rut) {
+                    resultadoRut.innerHTML += renderDatosRutTabla(data.datos_rut);
+                }
+
+                resultadoRut.className = 'show';
+                resultadoRut.style.display = 'block';
+                
+                if (data.valido) {
+                    statusEl.textContent = '✅ RUT validado correctamente';
+                    statusEl.className = 'upload-status success';
+                    resultadoRut.style.borderLeftColor = '#28a745';
+                } else {
+                    statusEl.textContent = '⚠️ El RUT tiene problemas que corregir';
+                    statusEl.className = 'upload-status error';
+                    resultadoRut.style.borderLeftColor = '#dc3545';
+                }
+                
+                // Actualizar el input de cédula si no tenía
+                if (!document.getElementById('cedula-input').value.trim() && data.cedula_encontrada) {
+                    document.getElementById('cedula-input').value = data.cedula_encontrada;
+                    guardarCedula(data.cedula_encontrada);
+                }
+                
+            } catch (error) {
+                console.error('Error subiendo RUT:', error);
+                statusEl.textContent = '❌ Error de conexión: ' + error.message;
+                statusEl.className = 'upload-status error';
+            }
+            
+            btnUpload.disabled = false;
+            fileInput.value = '';
+        }
+
+        // Mostrar nombre del archivo seleccionado
+        document.getElementById('rut-file').addEventListener('change', function() {
+            const statusEl = document.getElementById('upload-status');
+            if (this.files.length > 0) {
+                statusEl.textContent = '📄 Archivo seleccionado: ' + this.files[0].name;
+                statusEl.className = 'upload-status';
+            } else {
+                statusEl.textContent = 'Archivo seleccionado: Ninguno';
+                statusEl.className = 'upload-status';
+            }
+        });
+    </script>
+</body>
+</html>

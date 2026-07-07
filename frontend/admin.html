@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Admin - Asistente de Contratación</title>
+    <link rel="stylesheet" href="/static/css/estilos.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        body { background: #f0f2f5; }
+    </style>
+</head>
+<body>
+
+    <div id="error-msg" style="display:none; position:fixed; top:0; left:0; right:0; background:#dc3545; color:white; padding:20px; text-align:center; z-index:10000;">
+        <p id="error-text"></p>
+        <button onclick="window.location.href='/login'" style="background:white; color:#dc3545; border:none; padding:8px 20px; border-radius:5px; cursor:pointer; margin-top:10px;">Ir al Login</button>
+    </div>
+
+    <!-- Loading mientras verifica sesión -->
+    <div id="loading" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column;">
+        <h2>🔄 Verificando sesión...</h2>
+        <p>Espera un momento</p>
+        <p style="margin-top: 20px; font-size: 0.9em; color: #666;">Si no carga en 5 segundos, <a href="/login" style="color:#003a70;">haz clic aquí</a></p>
+    </div>
+
+    <!-- Loading mientras verifica sesión -->
+    <div id="loading" style="display: flex; align-items: center; justify-content: center; min-height: 100vh; flex-direction: column;">
+        <h2>🔄 Verificando sesión...</h2>
+        <p>Si no carga en 3 segundos, <a href="/login">haz clic aquí</a></p>
+    </div>
+
+    <!-- HEADER -->
+    <header class="header" style="display: none;" id="header-content">
+        <div class="header-content">
+            <div>
+                <h1>⚙️ Panel Admin</h1>
+                <p>Gestión del chatbot de contratación</p>
+            </div>
+            <div class="header-right">
+                <button class="btn btn-danger" onclick="logout()">Cerrar sesión</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- TABS -->
+    <nav class="tabs" style="display: none;" id="tabs-content">
+        <div class="tabs-container">
+            <a href="/" class="tab"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
+            <a href="/consultas" class="tab"><span class="tab-icon">📚</span><span>Consultas</span></a>
+            <a href="/login" class="tab active"><span class="tab-icon">⚙️</span><span>Admin</span></a>
+        </div>
+    </nav>
+
+    <!-- CONTENIDO -->
+    <div class="container" style="display: none;" id="dashboard-content">
+        <!-- ESTADÍSTICAS PRINCIPALES -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2 id="statTotal">0</h2>
+                <p>📊 Mensajes totales</p>
+            </div>
+            <div class="stat-card green">
+                <h2 id="statHoy">0</h2>
+                <p>📅 Mensajes hoy</p>
+            </div>
+            <div class="stat-card orange">
+                <h2 id="statCedulas">0</h2>
+                <p>🆔 Cédulas consultadas</p>
+            </div>
+            <div class="stat-card purple">
+                <h2 id="statUsuarios">0</h2>
+                <p>👥 Usuarios únicos</p>
+            </div>
+            <div class="stat-card red">
+                <h2 id="statSat">0/5</h2>
+                <p>⭐ Satisfacción</p>
+            </div>
+        </div>
+
+        <!-- CATEGORÍAS -->
+        <div class="card">
+            <h2>📈 Consultas por categoría</h2>
+            <div class="stats-grid" style="grid-template-columns: repeat(6, 1fr);">
+                <div style="background: #f0f8ff; padding: 15px; border-radius: 10px; text-align: center;">
+                    <p style="color: #003a70; font-weight: bold;">📋 Docs</p>
+                    <p style="font-size: 1.8em; font-weight: bold;" id="catDocs">0</p>
+                </div>
+                <div style="background: #f0fff4; padding: 15px; border-radius: 10px; text-align: center;">
+                    <p style="color: #28a745; font-weight: bold;">🌐 Portal</p>
+                    <p style="font-size: 1.8em; font-weight: bold;" id="catPortal">0</p>
+                </div>
+                <div style="background: #fff8f0; padding: 15px; border-radius: 10px; text-align: center;">
+                    <p style="color: #fd7e14; font-weight: bold;">📝 RUT</p>
+                    <p style="font-size: 1.8em; font-weight: bold;" id="catRut">0</p>
+                </div>
+                <div style="background: #fff0f6; padding: 15px; border-radius: 10px; text-align: center;">
+                    <p style="color: #e83e8c; font-weight: bold;">💰 Pagos</p>
+                    <p style="font-size: 1.8em; font-weight: bold;" id="catPagos">0</p>
+                </div>
+                <div style="background: #f3f0ff; padding: 15px; border-radius: 10px; text-align: center;">
+                    <p style="color: #6f42c1; font-weight: bold;">⚠️ Problemas</p>
+                    <p style="font-size: 1.8em; font-weight: bold;" id="catProblemas">0</p>
+                </div>
+                <div style="background: #f0f8ff; padding: 15px; border-radius: 10px; text-align: center;">
+                    <p style="color: #17a2b8; font-weight: bold;">🔧 Llenar</p>
+                    <p style="font-size: 1.8em; font-weight: bold;" id="catLlenar">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- GRÁFICAS -->
+        <div class="charts-grid">
+            <div class="chart-box">
+                <h3>📊 Distribución por categoría</h3>
+                <canvas id="chartCategorias"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>📈 Mensajes por día (últimos 7)</h3>
+                <canvas id="chartDias"></canvas>
+            </div>
+        </div>
+
+        <div class="charts-grid">
+            <div class="chart-box">
+                <h3>👍👎 Satisfacción</h3>
+                <canvas id="chartSat"></canvas>
+            </div>
+            <div class="chart-box">
+                <h3>📋 Resumen</h3>
+                <div style="padding: 15px; font-size: 0.95em; line-height: 2;">
+                    <p><strong>📊 Total:</strong> <span id="resTotal">0</span></p>
+                    <p><strong>📅 Hoy:</strong> <span id="resHoy">0</span></p>
+                    <p><strong>🆔 Cédulas:</strong> <span id="resCedulas">0</span></p>
+                    <p><strong>⭐ Satisfacción:</strong> <span id="resSat">0/5</span></p>
+                    <p><strong>👍 Positivas:</strong> <span id="resPos">0</span></p>
+                    <p><strong>👎 Negativas:</strong> <span id="resNeg">0</span></p>
+                    <p><strong>🔄 Actualizado:</strong> <span id="resUpdate"></span></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCIONES -->
+        <div style="display: flex; gap: 10px; margin: 20px 0; flex-wrap: wrap;">
+            <button class="btn btn-primary" onclick="actualizar()">🔄 Actualizar</button>
+            <button class="btn btn-success" onclick="exportarPDF()">📄 Exportar PDF</button>
+            <button class="btn btn-info" onclick="exportarCSV()">📊 Exportar CSV</button>
+        </div>
+
+        <!-- TABLA DE CONSULTAS -->
+        <div class="card">
+            <h2>💬 Últimas consultas del chatbot</h2>
+            <div class="search-box">
+                <input type="text" id="buscar" placeholder="🔍 Buscar en preguntas..." oninput="filtrarConsultas()">
+                <input type="text" id="buscarCedula" placeholder="🆔 Buscar por cédula..." oninput="filtrarConsultas()">
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Usuario</th>
+                        <th>Pregunta</th>
+                        <th>Categoría</th>
+                        <th>Calificación</th>
+                    </tr>
+                </thead>
+                <tbody id="tabla-body">
+                    <tr><td colspan="5" style="text-align:center; color:#999; padding:20px;">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let chartCat = null, chartDias = null, chartSat = null;
+        let datos = [];
+        let stats = null;
+
+        // ===== VERIFICAR SESIÓN AL CARGAR =====
+        window.addEventListener('DOMContentLoaded', function() {
+            verificarSesion();
+        });
+
+            async function verificarSesion() {
+                // Verificar localStorage primero
+                const isLoggedIn = localStorage.getItem('isLoggedIn');
+                const userRole = localStorage.getItem('userRole');
+                
+                if (isLoggedIn !== 'true') {
+                    // No hay sesión, ir al login
+                    window.location.href = '/login';
+                    return;
+                }
+                
+                // Verificar con el servidor
+                try {
+                    const r = await fetch('/api/admin/estadisticas-contratistas', {
+                        credentials: 'include',
+                        cache: 'no-store'  // No usar caché
+                    });
+                    
+                    if (r.ok) {
+                        // Sesión válida
+                        stats = await r.json();
+                        mostrarDashboard();
+                    } else if (r.status === 401) {
+                        // Sesión expiró, ir al login
+                        console.log('Sesión expirada, redirigiendo al login');
+                        localStorage.clear();
+                        window.location.href = '/login';
+                    } else {
+                        // Otro error
+                        mostrarError('Error al cargar: ' + r.status);
+                    }
+                } catch (e) {
+                    console.error('Error:', e);
+                    mostrarError('Error de conexión');
+                }
+            }
+
+
+        function mostrarDashboard() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('header-content').style.display = 'block';
+            document.getElementById('tabs-content').style.display = 'block';
+            document.getElementById('dashboard-content').style.display = 'block';
+            
+            actualizarVista();
+            cargarConsultas();
+            setInterval(cargarEstadisticasSilencioso, 60000);
+        }
+
+        function mostrarError(msg) {
+            document.getElementById('loading').innerHTML = 
+                '<h2>❌ ' + msg + '</h2><p><a href="/login" style="color:#003a70;">Volver al login</a></p>';
+        }
+
+        function actualizarVista() {
+            if (!stats) return;
+            
+            try {
+                document.getElementById('statTotal').textContent = stats.total_consultas || 0;
+                document.getElementById('statHoy').textContent = stats.consultas_hoy || 0;
+                document.getElementById('statCedulas').textContent = stats.cedulas_consultadas || 0;
+                document.getElementById('statUsuarios').textContent = stats.usuarios_unicos || 0;
+                document.getElementById('statSat').textContent = (stats.satisfaccion_promedio || 0) + '/5';
+                
+                const cat = stats.categorias || {};
+                document.getElementById('catDocs').textContent = cat.documentos || 0;
+                document.getElementById('catPortal').textContent = cat.portal || 0;
+                document.getElementById('catRut').textContent = cat.rut || 0;
+                document.getElementById('catPagos').textContent = cat.pagos || 0;
+                document.getElementById('catProblemas').textContent = cat.problemas || 0;
+                document.getElementById('catLlenar').textContent = cat.llenar || 0;
+                
+                document.getElementById('resTotal').textContent = stats.total_consultas || 0;
+                document.getElementById('resHoy').textContent = stats.consultas_hoy || 0;
+                document.getElementById('resCedulas').textContent = stats.cedulas_consultadas || 0;
+                document.getElementById('resSat').textContent = (stats.satisfaccion_promedio || 0) + '/5';
+                document.getElementById('resPos').textContent = stats.satisfaccion_positiva || 0;
+                document.getElementById('resNeg').textContent = stats.satisfaccion_negativa || 0;
+                document.getElementById('resUpdate').textContent = new Date().toLocaleString('es-CO');
+
+                // Gráficas
+                if (chartCat) chartCat.destroy();
+                chartCat = new Chart(document.getElementById('chartCategorias'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Documentos', 'Portal', 'RUT', 'Pagos', 'Problemas', 'Llenar'],
+                        datasets: [{
+                            data: [cat.documentos || 0, cat.portal || 0, cat.rut || 0, cat.pagos || 0, cat.problemas || 0, cat.llenar || 0],
+                            backgroundColor: ['#003a70', '#28a745', '#fd7e14', '#e83e8c', '#dc3545', '#17a2b8']
+                        }]
+                    },
+                    options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
+                });
+
+                if (chartDias) chartDias.destroy();
+                chartDias = new Chart(document.getElementById('chartDias'), {
+                    type: 'line',
+                    data: {
+                        labels: (stats.consultas_por_dia || []).map(d => d.dia),
+                        datasets: [{
+                            label: 'Consultas',
+                            data: (stats.consultas_por_dia || []).map(d => d.cantidad),
+                            borderColor: '#003a70',
+                            backgroundColor: 'rgba(0, 58, 112, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {responsive: true, maintainAspectRatio: false}
+                });
+
+                if (chartSat) chartSat.destroy();
+                chartSat = new Chart(document.getElementById('chartSat'), {
+                    type: 'bar',
+                    data: {
+                        labels: ['⭐1', '⭐2', '⭐3', '⭐4', '⭐5'],
+                        datasets: [{
+                            label: 'Cantidad',
+                            data: stats.distribucion_satisfaccion || [0,0,0,0,0],
+                            backgroundColor: ['#dc3545', '#fd7e14', '#ffc107', '#20c997', '#28a745']
+                        }]
+                    },
+                    options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {display: false}}}
+                });
+            } catch (e) {
+                console.error('Error actualizando vista:', e);
+            }
+        }
+
+        async function cargarEstadisticasSilencioso() {
+            try {
+                const r = await fetch('/api/admin/estadisticas-contratistas', {credentials: 'include'});
+                if (r.ok) {
+                    stats = await r.json();
+                    actualizarVista();
+                    cargarConsultas();
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function cargarConsultas() {
+            try {
+                const r = await fetch('/api/admin/consultas?limite=100', {credentials: 'include'});
+                if (r.ok) {
+                    const data = await r.json();
+                    datos = data.consultas || [];
+                    mostrarConsultas(datos);
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        function mostrarConsultas(consultas) {
+            const tbody = document.getElementById('tabla-body');
+            if (!tbody) return;
+            
+            if (!consultas || consultas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999; padding:20px;">No hay consultas aún</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = consultas.slice(0, 50).map(c => {
+                let badge = '<span class="badge badge-secondary">-</span>';
+                if (c.calificacion === 5) badge = '<span class="badge badge-success">👍 5</span>';
+                else if (c.calificacion && c.calificacion <= 2) badge = '<span class="badge badge-danger">👎 ' + c.calificacion + '</span>';
+                else if (c.calificacion) badge = '<span class="badge badge-warning">⭐ ' + c.calificacion + '</span>';
+                return `<tr>
+                    <td>${(c.fecha || '').substring(0, 16)}</td>
+                    <td>${(c.usuario || '-').substring(0, 12)}</td>
+                    <td>${((c.pregunta || '').substring(0, 60))}${(c.pregunta || '').length > 60 ? '...' : ''}</td>
+                    <td>${c.intencion || '-'}</td>
+                    <td>${badge}</td>
+                </tr>`;
+            }).join('');
+        }
+
+        function filtrarConsultas() {
+            const buscar = document.getElementById('buscar').value.toLowerCase();
+            const cedula = document.getElementById('buscarCedula').value.toLowerCase();
+            let f = datos;
+            if (buscar) f = f.filter(c => (c.pregunta || '').toLowerCase().includes(buscar));
+            if (cedula) f = f.filter(c => (c.pregunta || '').includes(cedula) || (c.usuario || '').includes(cedula));
+            mostrarConsultas(f);
+        }
+
+        function actualizar() {
+            cargarEstadisticasSilencioso();
+        }
+
+        function exportarCSV() {
+            if (!datos.length) { alert('No hay datos'); return; }
+            const h = ['Fecha', 'Usuario', 'Pregunta', 'Intención', 'Fuente', 'Calificación'];
+            const r = datos.map(c => [c.fecha, c.usuario, `"${(c.pregunta||'').replace(/"/g,'""')}"`, c.intencion, c.fuente||'', c.calificacion||'']);
+            const csv = [h, ...r].map(r => r.join(',')).join('\n');
+            const blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `consultas_${new Date().toISOString().split('T')[0]}.csv`;
+            link.click();
+        }
+
+        function exportarPDF() {
+            if (!stats) { alert('Cargando datos...'); return; }
+            try {
+                const {jsPDF} = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(18);
+                doc.text('Reporte - Asistente de Contratacion', 14, 20);
+                doc.setFontSize(10);
+                doc.text('UNIMINUTO Virtual - ' + new Date().toLocaleString('es-CO'), 14, 28);
+                doc.setFontSize(14);
+                doc.text('Resumen General', 14, 42);
+                doc.setFontSize(11);
+                let y = 52;
+                doc.text(`Total consultas: ${stats.total_consultas || 0}`, 14, y); y += 7;
+                doc.text(`Consultas hoy: ${stats.consultas_hoy || 0}`, 14, y); y += 7;
+                doc.text(`Cedulas consultadas: ${stats.cedulas_consultadas || 0}`, 14, y); y += 7;
+                doc.text(`Satisfaccion: ${stats.satisfaccion_promedio || 0}/5`, 14, y); y += 7;
+                doc.text(`Usuarios unicos: ${stats.usuarios_unicos || 0}`, 14, y); y += 12;
+                doc.setFontSize(14);
+                doc.text('Consultas por categoria', 14, y); y += 10;
+                doc.setFontSize(11);
+                const cat = stats.categorias || {};
+                doc.text(`Documentos: ${cat.documentos || 0}`, 14, y); y += 7;
+                doc.text(`Portal: ${cat.portal || 0}`, 14, y); y += 7;
+                doc.text(`RUT: ${cat.rut || 0}`, 14, y); y += 7;
+                doc.text(`Pagos: ${cat.pagos || 0}`, 14, y); y += 7;
+                doc.text(`Problemas: ${cat.problemas || 0}`, 14, y); y += 7;
+                doc.text(`Llenar: ${cat.llenar || 0}`, 14, y); y += 12;
+                doc.setFontSize(14);
+                doc.text('Ultimas 15 consultas', 14, y);
+                doc.setFontSize(9);
+                y += 8;
+                datos.slice(0, 15).forEach(c => {
+                    if (y > 270) { doc.addPage(); y = 20; }
+                    doc.text(`${(c.fecha||'').substring(0,16)} | ${(c.pregunta||'').substring(0,70)}`, 14, y);
+                    y += 6;
+                });
+                doc.save(`reporte_${new Date().toISOString().split('T')[0]}.pdf`);
+            } catch (e) {
+                console.error('Error generando PDF:', e);
+                alert('Error al generar PDF');
+            }
+        }
+
+        async function logout() {
+            try {
+                await fetch('/api/admin/logout', {method: 'POST', credentials: 'include'});
+            } catch (e) { console.error(e); }
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
+            window.location.href = '/login';
+        }
+    </script>
+</body>
+</html>

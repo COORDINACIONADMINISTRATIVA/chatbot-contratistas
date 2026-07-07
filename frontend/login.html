@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Asistente de Contratación</title>
+    <link rel="stylesheet" href="/static/css/estilos.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-box">
+            <h1>🔐 Iniciar Sesión</h1>
+            <p>Acceso para administradores y supervisores</p>
+            
+            <input type="text" id="usuario" placeholder="Usuario" value="admin">
+            <input type="password" id="contrasena" placeholder="Contraseña" value="admin123">
+            
+            <button onclick="login()">Ingresar</button>
+            
+            <p id="error-msg" class="error-msg"></p>
+            
+            <div class="hint">
+                <strong>Usuarios disponibles:</strong><br>
+                👤 admin / admin123 (Panel Admin)<br>
+                👤 supervisor / super123 (Panel Supervisora)
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🔥 Login page loaded');
+
+        async function login() {
+            const usuario = document.getElementById('usuario').value.trim();
+            const contrasena = document.getElementById('contrasena').value.trim();
+            const errorMsg = document.getElementById('error-msg');
+            
+            console.log('📤 Enviando login:', usuario, contrasena ? '********' : 'vacío');
+            
+            if (!usuario || !contrasena) {
+                errorMsg.textContent = '❌ Completa todos los campos';
+                return;
+            }
+            
+            errorMsg.style.color = '#003a70';
+            errorMsg.textContent = '⏳ Verificando...';
+            
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
+                    body: JSON.stringify({usuario, contrasena})
+                });
+                
+                console.log('📥 Response status:', response.status);
+                const data = await response.json();
+                console.log('📥 Response data:', data);
+                
+                if (data.success) {
+                    console.log('✅ Login exitoso');
+                    localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('userRole', data.admin.rol);
+                    
+                    errorMsg.style.color = '#28a745';
+                    errorMsg.textContent = '✅ Redirigiendo...';
+                    
+                    setTimeout(() => {
+                        if (data.admin.rol === 'supervisor') {
+                            window.location.href = '/supervisor';
+                        } else {
+                            window.location.href = '/admin';
+                        }
+                    }, 500);
+                } else {
+                    errorMsg.style.color = '#dc3545';
+                    errorMsg.textContent = '❌ ' + (data.error || 'Credenciales incorrectas');
+                }
+            } catch (error) {
+                console.error('❌ Error completo:', error);
+                errorMsg.style.color = '#dc3545';
+                errorMsg.textContent = '❌ Error: ' + error.message;
+            }
+        }
+        
+        // Enter para login
+        document.getElementById('contrasena').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+        
+        document.getElementById('usuario').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') login();
+        });
+    </script>
+</body>
+</html>
