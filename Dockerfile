@@ -11,4 +11,4 @@ COPY . .
 RUN mkdir -p uploads
 
 EXPOSE 5000
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "-k", "gevent", "--worker-connections", "10", "app:app"]
