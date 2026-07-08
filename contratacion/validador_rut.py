@@ -1,4 +1,3 @@
-
 import re
 import json
 from datetime import datetime
@@ -366,51 +365,56 @@ class ValidadorRUT:
         return resultados
 
     def generar_respuesta(self, resultados, contratista_info=None):
-        lineas = ["📄 **Análisis de tu RUT**\n"]
-        if contratista_info:
-            if contratista_info.get('nombre'):
-                lineas.append(f"👤 **Nombre (en el sistema):** {contratista_info['nombre']}")
+        """Genera una respuesta clara y concisa para el usuario"""
+        lineas = []
+        
+        # Solo mostrar nombre si viene del sistema (no del RUT)
+        if contratista_info and contratista_info.get('nombre'):
+            lineas.append(f"👤 **Contratista:** {contratista_info['nombre']}")
             if contratista_info.get('cedula'):
-                lineas.append(f"🆔 **Cédula (en el sistema):** {contratista_info['cedula']}")
+                lineas.append(f"🆔 **Cédula:** {contratista_info['cedula']}")
             lineas.append("")
-
-        datos = resultados.get('datos_extraidos', {})
-        if datos:
-            lineas.append("📋 **Datos leídos del PDF:**")
-            if datos.get('nombre_completo'):
-                lineas.append(f"• Nombre/Razón social: {datos['nombre_completo']}")
-            if datos.get('numero_identificacion'):
-                lineas.append(f"• Identificación: {datos['numero_identificacion']}")
-            if datos.get('correo'):
-                lineas.append(f"• Correo: {datos['correo']}")
-            if datos.get('telefonos'):
-                lineas.append(f"• Teléfono(s): {', '.join(datos['telefonos'])}")
-            if datos.get('direccion'):
-                lineas.append(f"• Dirección: {datos['direccion']}")
-            if datos.get('actividades_economicas'):
-                acts = ', '.join(f"{a['codigo']} ({a['fecha_inicio']})" for a in datos['actividades_economicas'])
-                lineas.append(f"• Actividad(es) económica(s): {acts}")
-            if datos.get('responsabilidades_calidades_atributos'):
-                lineas.append(f"• Responsabilidades: {', '.join(datos['responsabilidades_calidades_atributos'])}")
-            if datos.get('fecha_actualizacion_rut'):
-                lineas.append(f"• Fecha actualización RUT: {datos['fecha_actualizacion_rut']}")
-            if datos.get('fecha_generacion_pdf'):
-                lineas.append(f"• Fecha generación PDF: {datos['fecha_generacion_pdf']}")
-            lineas.append("")
-
+        
+        # Veredicto final
         if resultados['valido']:
-            lineas.append("✅ **¡Tu RUT está listo para subir!**\n")
+            lineas.append("✅ **¡Tu RUT está listo para subir a la plataforma!**")
+        else:
+            lineas.append("❌ **Tu RUT tiene problemas que debes corregir:**")
+        
+        lineas.append("")
+        
+        # Mostrar éxitos (cosas que están bien)
+        if resultados['exitos']:
             for e in resultados['exitos']:
                 lineas.append(f"  {e}")
-        else:
-            lineas.append("❌ **Tu RUT tiene problemas:**\n")
+        
+        # Mostrar errores (cosas que están mal)
+        if resultados['errores']:
+            lineas.append("")
             for e in resultados['errores']:
                 lineas.append(f"  {e}")
-            if resultados['advertencias']:
-                lineas.append("\n⚠️ **Advertencias:**")
-                for a in resultados['advertencias']:
-                    lineas.append(f"  {a}")
-
+        
+        # Mostrar advertencias
+        if resultados['advertencias']:
+            lineas.append("")
+            lineas.append("⚠️ **Advertencias:**")
+            for a in resultados['advertencias']:
+                lineas.append(f"  {a}")
+        
+        # Consejos útiles si hay errores
+        if not resultados['valido']:
+            lineas.append("")
+            lineas.append("📌 **¿Qué hacer?**")
+            errores_texto = " ".join(resultados['errores']).lower()
+            if any(p in errores_texto for p in ['trámite', 'tramite']):
+                lineas.append("  • Espera a tener 'Actualización' o 'Copia', no 'En trámite'")
+            if any(p in errores_texto for p in ['actividad', '8560']):
+                lineas.append("  • Agrega actividad económica 8560 en la DIAN (educación)")
+            if any(p in errores_texto for p in ['antiguo', 'días', 'vigencia']):
+                lineas.append("  • Saca un RUT actualizado (menos de 30 días)")
+            if any(p in errores_texto for p in ['cédula', 'cedula', 'coincide']):
+                lineas.append("  • Verifica que el RUT sea tuyo y la cédula coincida")
+        
         return "\n".join(lineas)
 
 
