@@ -60,7 +60,8 @@ async function enviarMensaje() {
 
 async function enviarFeedback(consultaId, calificacion) {
     try {
-        await fetch('http://localhost:5000/api/feedback', {
+        const BASE_URL = window.location.origin;
+        await fetch(BASE_URL + '/api/feedback', {  // 👈 CAMBIADO
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ consulta_id: consultaId, calificacion })
@@ -68,9 +69,4 @@ async function enviarFeedback(consultaId, calificacion) {
         const c = document.getElementById(`feedback-${consultaId}`);
         if (c) c.innerHTML = '<p style="color:green; font-size:0.85em;">Gracias!</p>';
     } catch (e) { console.error(e); }
-}
-
-function enviarPreguntaRapida(pregunta) {
-    document.getElementById('user-input').value = pregunta;
-    enviarMensaje();
 }
