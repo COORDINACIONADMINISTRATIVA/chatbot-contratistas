@@ -104,6 +104,80 @@
             display: none;
         }
         #resultado-rut.show { display: block; }
+        
+        /* Separador visual */
+        .separador {
+            border: none;
+            border-top: 2px dashed #dee2e6;
+            margin: 30px 0;
+        }
+        
+        .subseccion-titulo {
+            color: #003a70;
+            font-size: 1em;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        .subseccion-desc {
+            color: #666;
+            font-size: 0.9em;
+            margin-bottom: 15px;
+        }
+        
+        /* Campos de cédula separados */
+        .cedula-input-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .cedula-input-group input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 25px;
+            font-size: 1em;
+        }
+        .cedula-input-group input:focus {
+            border-color: #003a70;
+            outline: none;
+        }
+        .cedula-input-group button {
+            padding: 12px 30px;
+            background: #003a70;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .cedula-input-group button:hover {
+            background: #0056b3;
+        }
+        
+        .alert {
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid;
+        }
+        .alert-info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
+        .alert-success { background: #d4edda; border-color: #28a745; color: #155724; }
+        .alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
+        .alert-danger { background: #f8d7da; border-color: #dc3545; color: #721c24; }
+        
+        @media (max-width: 768px) {
+            .cedula-input-group {
+                flex-direction: column;
+            }
+            .cedula-input-group input {
+                width: 100%;
+            }
+            .cedula-input-group button {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
@@ -128,12 +202,19 @@
 
     <!-- CONTENIDO -->
     <div class="container">
+        
+        <!-- ============================================================ -->
+        <!-- SECCIÓN 1: CONSULTAR CÉDULA (INDEPENDIENTE) -->
+        <!-- ============================================================ -->
         <div class="card">
             <h2>🔍 Consultar Mi Proceso</h2>
-            <p style="color: #666; margin-bottom: 20px;">Ingresa tu número de cédula para ver el estado actual y el historial de tu proceso.</p>
+            <p style="color: #666; margin-bottom: 20px;">
+                Ingresa tu número de cédula para ver el estado actual y el historial de tu proceso.
+                <br><small style="color: #999;">⚠️ Esta consulta es independiente de la validación del RUT.</small>
+            </p>
             
-            <div class="search-box">
-                <input type="text" id="cedula-input" placeholder="Ej: 1234567890" 
+            <div class="cedula-input-group">
+                <input type="text" id="cedula-consulta" placeholder="Ej: 1234567890" 
                        onkeypress="if(event.key==='Enter') buscarCedula()">
                 <button onclick="buscarCedula()">🔍 Consultar</button>
             </div>
@@ -142,14 +223,30 @@
         <!-- RESULTADO DE CONSULTA -->
         <div id="resultado"></div>
 
-        <!-- ÁREA DE SUBIDA DE RUT -->
-        <div class="card" style="margin-top: 20px;">
+        <hr class="separador">
+
+        <!-- ============================================================ -->
+        <!-- SECCIÓN 2: VALIDAR RUT (100% INDEPENDIENTE) -->
+        <!-- ============================================================ -->
+        <div class="card">
             <h2>📄 Validar mi RUT</h2>
             <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">
                 Sube tu RUT en formato PDF para que lo revisemos automáticamente.
+                <br><small style="color: #999;">⚠️ Esta validación es independiente de la consulta de cédula.</small>
             </p>
             
             <div class="upload-area">
+                <div style="width: 100%; max-width: 400px;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 5px; font-size: 0.9em; color: #555;">
+                        📝 Cédula del RUT (opcional):
+                    </label>
+                    <input type="text" id="cedula-rut" placeholder="Ej: 1234567890" 
+                           style="width: 100%; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 0.95em; margin-bottom: 12px;">
+                    <p style="font-size: 0.8em; color: #999; margin-bottom: 12px;">
+                        Si dejas este campo vacío, solo se mostrarán los datos extraídos del PDF sin verificar contra una cédula específica.
+                    </p>
+                </div>
+                
                 <input type="file" id="rut-file" accept=".pdf" style="display:none;" onchange="subirRut()">
                 <button class="btn-upload" onclick="document.getElementById('rut-file').click()" id="btn-upload-rut">
                     📄 Seleccionar RUT (PDF)
@@ -163,16 +260,11 @@
     </div>
 
     <script>
-        // ========== GUARDAR CÉDULA EN LOCALSTORAGE ==========
-        function guardarCedula(cedula) {
-            if (cedula) {
-                localStorage.setItem('ultima_cedula', cedula);
-            }
-        }
-
-        // ========== CONSULTAR CÉDULA ==========
+        // ================================================================
+        // SECCIÓN 1: CONSULTAR CÉDULA (NO guarda nada en localStorage)
+        // ================================================================
         async function buscarCedula() {
-            const input = document.getElementById('cedula-input');
+            const input = document.getElementById('cedula-consulta');
             const cedula = input.value.trim();
             const resultadoDiv = document.getElementById('resultado');
             
@@ -200,11 +292,6 @@
                 if (!data.encontrado) {
                     resultadoDiv.innerHTML = '<div class="alert alert-warning">❌ ' + data.mensaje + '</div>';
                     return;
-                }
-                
-                // ===== GUARDAR CÉDULA PARA SUBIR RUT =====
-                if (data.encontrado && data.contratistas.length > 0) {
-                    guardarCedula(data.contratistas[0].cedula);
                 }
                 
                 let html = '';
@@ -246,7 +333,9 @@
             }
         }
 
-        // ========== SUBIR RUT ==========
+        // ================================================================
+        // SECCIÓN 2: SUBIR RUT (100% INDEPENDIENTE, NO usa localStorage)
+        // ================================================================
         function renderDatosRutTabla(datos) {
             const etiquetas = {
                 tipo_documento: 'Tipo de documento',
@@ -283,8 +372,10 @@
 
             return `
                 <div style="margin-top:14px;">
-                    <strong>📄 Datos extraídos del RUT (JSON):</strong>
-                    <table style="margin-top:6px;border-collapse:collapse;font-size:0.92em;">${filas}</table>
+                    <strong>📄 Datos extraídos del RUT:</strong>
+                    <table style="margin-top:6px;border-collapse:collapse;font-size:0.92em;width:100%;">
+                        ${filas}
+                    </table>
                 </div>`;
         }
 
@@ -327,13 +418,13 @@
             const formData = new FormData();
             formData.append('rut', file);
             
-            // Obtener cédula del input o del localStorage
-            let cedula = document.getElementById('cedula-input').value.trim();
-            if (!cedula) {
-                cedula = localStorage.getItem('ultima_cedula') || '';
-            }
-            if (cedula) {
-                formData.append('cedula', cedula);
+            // ============================================================
+            // IMPORTANTE: La cédula se toma SOLO del campo de la sección RUT
+            // NO usa localStorage, NO se vincula con la consulta de cédula
+            // ============================================================
+            const cedulaRut = document.getElementById('cedula-rut').value.trim();
+            if (cedulaRut) {
+                formData.append('cedula', cedulaRut);
             }
             
             try {
@@ -355,8 +446,8 @@
                 resultadoRut.innerHTML = data.respuesta || '✅ RUT analizado correctamente';
 
                 // Mostrar además el JSON de datos extraídos en una tabla legible
-                if (data.datos_rut) {
-                    resultadoRut.innerHTML += renderDatosRutTabla(data.datos_rut);
+                if (data.datos) {
+                    resultadoRut.innerHTML += renderDatosRutTabla(data.datos);
                 }
 
                 resultadoRut.className = 'show';
@@ -370,12 +461,6 @@
                     statusEl.textContent = '⚠️ El RUT tiene problemas que corregir';
                     statusEl.className = 'upload-status error';
                     resultadoRut.style.borderLeftColor = '#dc3545';
-                }
-                
-                // Actualizar el input de cédula si no tenía
-                if (!document.getElementById('cedula-input').value.trim() && data.cedula_encontrada) {
-                    document.getElementById('cedula-input').value = data.cedula_encontrada;
-                    guardarCedula(data.cedula_encontrada);
                 }
                 
             } catch (error) {
@@ -399,6 +484,29 @@
                 statusEl.className = 'upload-status';
             }
         });
+
+        // ================================================================
+        // Enter para consultar cédula (sección 1)
+        // ================================================================
+        document.getElementById('cedula-consulta').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                buscarCedula();
+            }
+        });
+
+        // ================================================================
+        // Enter para el campo de cédula del RUT (sección 2)
+        // ================================================================
+        document.getElementById('cedula-rut').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                // Disparar el click del botón de subir archivo
+                document.getElementById('rut-file').click();
+            }
+        });
+
+        console.log('✅ index.html cargado - Consulta de cédula y validación de RUT son 100% independientes');
     </script>
 </body>
 </html>
