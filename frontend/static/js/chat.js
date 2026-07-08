@@ -1,4 +1,5 @@
-const API_URL = 'http://localhost:5000/api/chat';
+const BASE_URL = window.location.origin;
+const API_URL = BASE_URL + '/api/chat';
 let usuarioId = 'user_' + Math.random().toString(36).substr(2, 9);
 
 function agregarMensaje(texto, tipo, mostrarFeedback, consultaId) {
