@@ -263,8 +263,7 @@ def feedback():
 def validar_rut():
     """Recibe un RUT en PDF, lo valida y devuelve el resultado"""
     from werkzeug.utils import secure_filename
-    from contratacion.validador_rut import analizar_rut
-    import os
+    from contratacion.validador_rut import validar_rut_archivo    
     
     # Detectar nombre del campo
     archivo = None
@@ -307,7 +306,7 @@ def validar_rut():
     
     try:
         # Analizar RUT
-        resultado = analizar_rut(ruta_archivo, cedula)
+        resultado = validar_rut_archivo(ruta_archivo, cedula)
         
         # Agregar info del contratista
         if contratista_info:

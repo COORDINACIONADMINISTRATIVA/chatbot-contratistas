@@ -1,25 +1,4 @@
-"""
-Validador / Lector de RUT (DIAN - Colombia)
-=============================================
 
-POR QUÉ ESTE ARCHIVO EXISTE ASÍ:
-El texto que pypdf extrae de un RUT NO respeta el orden visual del PDF.
-Todas las ETIQUETAS ("26. Número de Identificación", "42. Correo electrónico"...)
-salen agrupadas en un bloque, y todos los VALORES salen agrupados en OTRO bloque,
-varias líneas más abajo, en un orden distinto al de las etiquetas.
-
-Por eso "buscar la etiqueta y leer lo que sigue" (la estrategia que fallaba antes)
-nunca fue confiable. La estrategia correcta es reconocer los VALORES por su
-FORMA (un correo tiene @, una fecha tiene guiones, una cédula es una tira de
-10 dígitos separados por espacios, etc.) y por su POSICIÓN RELATIVA entre sí
-(la dirección siempre queda una línea antes del correo, el teléfono una línea
-después, etc.), no por la etiqueta que las precede.
-
-Este módulo entrega:
-- `extraer_datos_rut(texto)` -> dict JSON con todos los campos reconocidos.
-- `ValidadorRUT.analizar_rut(...)` -> valida reglas de negocio (marca de agua,
-  actividad económica, vigencia, cédula) usando esos datos.
-"""
 import re
 import json
 from datetime import datetime
