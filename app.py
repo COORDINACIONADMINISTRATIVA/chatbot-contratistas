@@ -305,16 +305,13 @@ def validar_rut():
     archivo.save(ruta_archivo)
     
     try:
-        # Analizar RUT
-        resultado = validar_rut_archivo(ruta_archivo, cedula)
+        # Analizar RUT (devuelve el texto legible y el dict con los datos)
+        respuesta, resultado = validar_rut_archivo(ruta_archivo, cedula)
         
-        # Agregar info del contratista
+        # Agregar info del contratista a los datos extraídos
         if contratista_info:
-            resultado['datos']['nombre_contratista'] = contratista_info.get('nombre')
-            resultado['datos']['cedula_contratista'] = contratista_info.get('cedula')
-        
-        # Generar texto legible
-        texto = generar_texto_rut(resultado, contratista_info)
+            resultado['datos_extraidos']['nombre_contratista'] = contratista_info.get('nombre')
+            resultado['datos_extraidos']['cedula_contratista'] = contratista_info.get('cedula')
         
         # Limpiar
         try:
@@ -325,11 +322,11 @@ def validar_rut():
         return jsonify({
             'success': True,
             'valido': resultado['valido'],
-            'datos': resultado['datos'],
+            'datos': resultado['datos_extraidos'],
             'errores': resultado['errores'],
             'advertencias': resultado['advertencias'],
             'exitos': resultado['exitos'],
-            'respuesta_legible': texto,
+            'respuesta': respuesta,
             'archivo_procesado': archivo.filename
         })
     except Exception as e:
@@ -341,67 +338,6 @@ def validar_rut():
             'success': False,
             'error': f'Error al procesar el RUT: {str(e)}'
         }), 500
-
-
-def generar_texto_rut(resultado, contratista_info=None):
-    """Convierte el resultado a texto legible"""
-    lineas = []
-    
-    if contratista_info and contratista_info.get('nombre'):
-        lineas.append(f"👤 **Contratista:** {contratista_info['nombre']}")
-    if contratista_info and contratista_info.get('cedula'):
-        lineas.append(f"🆔 **Cédula:** {contratista_info['cedula']}")
-    lineas.append("")
-    
-    lineas.append("📄 **Resultado del análisis de tu RUT**")
-    lineas.append("─" * 30)
-    lineas.append("")
-    
-    datos = resultado.get('datos', {})
-    if datos:
-        lineas.append("📋 **Datos extraídos del RUT:**")
-        if datos.get('nombre'):
-            lineas.append(f"  • Nombre: {datos['nombre']}")
-        if datos.get('cedula'):
-            lineas.append(f"  • Cédula: {datos['cedula']}")
-        if datos.get('correo'):
-            lineas.append(f"  • Correo: {datos['correo']}")
-        if datos.get('actividad'):
-            act_nom = datos.get('actividad_nombre', '')
-            lineas.append(f"  • Actividad: {datos['actividad']} ({act_nom})")
-        if datos.get('fecha'):
-            lineas.append(f"  • Fecha: {datos['fecha']}")
-        lineas.append("")
-    
-    if resultado['valido']:
-        lineas.append("✅ **¡Tu RUT está listo para subir a la plataforma!**")
-        lineas.append("")
-        for e in resultado['exitos']:
-            lineas.append(f"  {e}")
-    else:
-        lineas.append("⚠️ **Tu RUT tiene problemas que debes corregir:**")
-        lineas.append("")
-        for e in resultado['errores']:
-            lineas.append(f"  {e}")
-        
-        if resultado['advertencias']:
-            lineas.append("")
-            lineas.append("⚠️ **Advertencias:**")
-            for a in resultado['advertencias']:
-                lineas.append(f"  {a}")
-        
-        lineas.append("")
-        lineas.append("📌 **¿Qué hacer?**")
-        if any('trámite' in e.lower() or 'tramite' in e.lower() for e in resultado['errores']):
-            lineas.append("  • Espera a tener 'Actualización', no 'en trámite'")
-        if any('actividad' in e.lower() for e in resultado['errores']):
-            lineas.append("  • Agrega actividad económica 8560 en la DIAN")
-        if any('año' in e.lower() or 'antiguo' in e.lower() or 'reciente' in e.lower() for e in resultado['errores']):
-            lineas.append("  • Saca un RUT actualizado (de este año o el pasado)")
-        if any('cédula' in e.lower() or 'cedula' in e.lower() for e in resultado['errores']):
-            lineas.append("  • Verifica que el RUT sea tuyo")
-    
-    return "\n".join(lineas)
 
 
 # ==================== ADMINISTRACIÓN ====================
