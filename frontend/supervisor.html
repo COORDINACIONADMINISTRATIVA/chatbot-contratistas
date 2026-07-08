@@ -103,20 +103,21 @@
                     mostrarDashboard(data);
                 } else if (r.status === 401) {
                     console.log('❌ No autorizado, redirigiendo a login');
-                    // Limpiar localStorage y redirigir
                     localStorage.removeItem('isLoggedIn');
                     localStorage.removeItem('userRole');
                     window.location.href = '/login';
                 } else {
-                    mostrarError('Error al cargar datos del supervisor');
+                    // Error del servidor (500, etc.)
+                    mostrarError('Error al cargar datos del supervisor (código ' + r.status + ')');
                 }
             } catch (e) {
-                console.error('❌ Error:', e);
-                mostrarError('Error de conexión');
+                console.error('❌ Error de red:', e);
+                mostrarError('Error de conexión con el servidor. ¿Está corriendo la app?');
             }
         }
 
         function mostrarDashboard(data) {
+            // Ocultar loading y mostrar contenido
             document.getElementById('loading').style.display = 'none';
             document.getElementById('header-content').style.display = 'block';
             document.getElementById('tabs-content').style.display = 'block';
@@ -151,7 +152,7 @@
                 }
             });
 
-            // Gráfica de categorías del chatbot
+            // Gráfica de categorías del chatbot (simplificada, se puede mejorar)
             if (chartCategorias) chartCategorias.destroy();
             const cat = data.chat?.categorias || {};
             chartCategorias = new Chart(document.getElementById('chartCategorias'), {

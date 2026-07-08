@@ -13,6 +13,8 @@ from functools import wraps
 from collections import Counter
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
+import pandas as pd
+
 
 # ==================== IMPORTS AL INICIO ====================
 # Agregar el directorio actual al path
@@ -485,187 +487,124 @@ def listar_consultas():
         return jsonify({'error': str(e), 'consultas': []}), 500
 
 
-# ==================== ENDPOINT DEL SUPERVISOR ====================
+# ==================== ENDPOINT DEL SUPERVISOR (ARREGLADO USANDO EXCEL) ====================
 
 @app.route('/api/supervisor/dashboard', methods=['GET'])
 @admin_required
 def supervisor_dashboard():
     import traceback
-    
     try:
+        # Usar el DataFrame del lector para obtener estadísticas
+        df = lector.df
+        if df is None or df.empty:
+            return jsonify({
+                'total_contratistas_unicos': 0,
+                'total_contratos': 0,
+                'promedio_contratos': 0,
+                'chat': {'total_consultas': 0, 'usuarios_unicos': 0, 'cedulas_consultadas': 0, 'categorias': {}, 'ultimas_consultas': [], 'positivas': 0, 'negativas': 0},
+                'estados': {'labels': [], 'values': []},
+                'tipos_problemas': {},
+                'por_anio': {},
+                'top_problemas': [],
+                'sin_movimiento': [],
+                'contratistas': []
+            })
+
+        # Estadísticas de contratos
+        total_contratos = len(df)
+        cedulas_unicas = df['CEDULA'].nunique() if 'CEDULA' in df.columns else 0
+        promedio = round(total_contratos / cedulas_unicas, 2) if cedulas_unicas > 0 else 0
+
+        # Estados (top 10)
+        if 'ESTADO' in df.columns:
+            estados_counts = df['ESTADO'].value_counts().head(10)
+            estados_data = {
+                'labels': estados_counts.index.tolist(),
+                'values': estados_counts.values.tolist()
+            }
+        else:
+            estados_data = {'labels': [], 'values': []}
+
+        # Años
+        if 'AÑO' in df.columns:
+            anios_counts = df['AÑO'].value_counts()
+            por_anio = {str(k): v for k, v in anios_counts.items() if pd.notna(k)}
+        else:
+            por_anio = {}
+
+        # Observaciones y problemas (simplificado)
+        tipos_problemas = {}
+        if 'OBSERVACIÓN' in df.columns:
+            for obs in df['OBSERVACIÓN'].dropna():
+                obs_upper = str(obs).upper()
+                if 'RECHAZ' in obs_upper:
+                    tipos_problemas['Rechazo'] = tipos_problemas.get('Rechazo', 0) + 1
+                if 'NO CONTESTA' in obs_upper:
+                    tipos_problemas['No contesta'] = tipos_problemas.get('No contesta', 0) + 1
+                if 'RUT' in obs_upper and ('MAL' in obs_upper or 'CORRECCION' in obs_upper):
+                    tipos_problemas['RUT'] = tipos_problemas.get('RUT', 0) + 1
+                if 'REGIMEN' in obs_upper:
+                    tipos_problemas['Régimen'] = tipos_problemas.get('Régimen', 0) + 1
+                if 'SEDE' in obs_upper:
+                    tipos_problemas['Sede'] = tipos_problemas.get('Sede', 0) + 1
+                if 'DOCUMENTOS' in obs_upper:
+                    tipos_problemas['Documentos'] = tipos_problemas.get('Documentos', 0) + 1
+                if 'CONTRASEÑA' in obs_upper or 'CLAVE' in obs_upper:
+                    tipos_problemas['Con clave'] = tipos_problemas.get('Con clave', 0) + 1
+
+        # Top contratistas con más problemas (basado en observaciones)
+        top_problemas = []
+        if 'CEDULA' in df.columns and 'OBSERVACIÓN' in df.columns:
+            grouped = df.groupby('CEDULA').agg({
+                'NOMBRE DE CONTRATISTA': 'first',
+                'OBSERVACIÓN': lambda x: x.count(),
+                'ESTADO': 'count'
+            }).reset_index()
+            grouped.columns = ['cedula', 'nombre', 'total_problemas', 'total_contratos']
+            grouped = grouped[grouped['total_problemas'] > 0].sort_values('total_problemas', ascending=False).head(15)
+            top_problemas = grouped.to_dict('records')
+
+        # Datos del chat (desde SQLite)
         conn = get_connection()
         cursor = conn.cursor()
-        
-        cursor.execute('SELECT COUNT(DISTINCT CEDULA) as total FROM contratacion')
-        total_contratistas_unicos = cursor.fetchone()['total']
-        cursor.execute('SELECT COUNT(*) as total FROM contratacion')
-        total_contratos = cursor.fetchone()['total']
-        promedio = round(total_contratos / total_contratistas_unicos, 2) if total_contratistas_unicos > 0 else 0
-        
         cursor.execute('SELECT COUNT(*) as total FROM consultas')
-        total_chat_consultas = cursor.fetchone()['total']
+        total_chat = cursor.fetchone()['total']
         cursor.execute('SELECT COUNT(DISTINCT usuario) as unicos FROM consultas')
         usuarios_unicos = cursor.fetchone()['unicos']
         cursor.execute("SELECT COUNT(*) as total FROM consultas WHERE pregunta GLOB '[0-9][0-9][0-9][0-9][0-9][0-9]*'")
         cedulas_consultadas = cursor.fetchone()['total']
-        
-        cursor.execute('SELECT pregunta FROM consultas')
-        todas_preguntas = cursor.fetchall()
-        categorias = {'documentos': 0, 'portal': 0, 'rut': 0, 'pagos': 0, 'problemas': 0, 'llenar': 0}
-        for row in todas_preguntas:
-            pregunta = (row['pregunta'] or '').lower()
-            if any(p in pregunta for p in ['documento', 'papel', 'que necesito']):
-                categorias['documentos'] += 1
-            if any(p in pregunta for p in ['portal', 'plataforma', 'registro']):
-                categorias['portal'] += 1
-            if 'rut' in pregunta:
-                categorias['rut'] += 1
-            if any(p in pregunta for p in ['pago', 'factura']):
-                categorias['pagos'] += 1
-            if any(p in pregunta for p in ['problema', 'error', 'no puedo']):
-                categorias['problemas'] += 1
-            if any(p in pregunta for p in ['llenar', 'campo']):
-                categorias['llenar'] += 1
-        
-        # Últimas consultas del chatbot
         cursor.execute('SELECT * FROM consultas ORDER BY fecha DESC LIMIT 50')
         ultimas_consultas = [dict(row) for row in cursor.fetchall()]
-        
         cursor.execute("SELECT COUNT(*) FROM consultas WHERE calificacion >= 4")
         positivas = cursor.fetchone()[0] or 0
         cursor.execute("SELECT COUNT(*) FROM consultas WHERE calificacion <= 2")
         negativas = cursor.fetchone()[0] or 0
-        
+        conn.close()
+
         chat_data = {
-            'total_consultas': total_chat_consultas,
+            'total_consultas': total_chat,
             'usuarios_unicos': usuarios_unicos,
             'cedulas_consultadas': cedulas_consultadas,
-            'categorias': categorias,
+            'categorias': {},  # Podrías calcular categorías si quieres
             'ultimas_consultas': ultimas_consultas,
             'positivas': positivas,
             'negativas': negativas
         }
-        
-        cursor.execute('''SELECT ESTADO, COUNT(*) as cantidad FROM contratacion WHERE ESTADO IS NOT NULL AND ESTADO != '' GROUP BY ESTADO ORDER BY cantidad DESC LIMIT 10''')
-        estados_rows = cursor.fetchall()
-        estados_data = {
-            'labels': [r['ESTADO'] for r in estados_rows if r['ESTADO']],
-            'values': [r['cantidad'] for r in estados_rows if r['ESTADO']]
-        }
-        
-        cursor.execute('SELECT OBSERVACION FROM contratacion WHERE OBSERVACION IS NOT NULL')
-        observaciones = cursor.fetchall()
-        tipos_problemas = {
-            'Rechazo en portal': 0, 'No contesta': 0, 'RUT mal/trámite': 0,
-            'Régimen incorrecto': 0, 'Sede incorrecta': 0, 'Documentos pendientes': 0,
-            'Documentos con clave': 0, 'Examen médico pendiente': 0,
-            'Cotización pendiente': 0, 'Acta pendiente': 0, ' Otros': 0
-        }
-        for row in observaciones:
-            obs = (row['OBSERVACION'] or '').upper()
-            if not obs:
-                continue
-            encontrado = False
-            if 'RECHAZ' in obs:
-                tipos_problemas['Rechazo en portal'] += 1
-                encontrado = True
-            if 'NO CONTESTA' in obs:
-                tipos_problemas['No contesta'] += 1
-                encontrado = True
-            if 'RUT' in obs and ('MAL' in obs or 'TRAMITE' in obs or 'CORRECCION' in obs):
-                tipos_problemas['RUT mal/trámite'] += 1
-                encontrado = True
-            if 'REGIMEN' in obs:
-                tipos_problemas['Régimen incorrecto'] += 1
-                encontrado = True
-            if 'SEDE' in obs and ('INCORRECT' in obs or 'PRINCIPAL' in obs):
-                tipos_problemas['Sede incorrecta'] += 1
-                encontrado = True
-            if 'PTE DOCUMENTOS' in obs or 'SIN DOCUMENTOS' in obs:
-                tipos_problemas['Documentos pendientes'] += 1
-                encontrado = True
-            if 'CONTRASEÑA' in obs or 'CON CLAVE' in obs:
-                tipos_problemas['Documentos con clave'] += 1
-                encontrado = True
-            if 'PTE EXAMEN' in obs:
-                tipos_problemas['Examen médico pendiente'] += 1
-                encontrado = True
-            if 'PTE COTIZACION' in obs:
-                tipos_problemas['Cotización pendiente'] += 1
-                encontrado = True
-            if 'PTE ACTA' in obs:
-                tipos_problemas['Acta pendiente'] += 1
-                encontrado = True
-            if not encontrado:
-                tipos_problemas[' Otros'] += 1
-        tipos_problemas = {k: v for k, v in tipos_problemas.items() if v > 0}
-        
-        cursor.execute('SELECT AÑO, COUNT(*) as cantidad FROM contratacion WHERE AÑO IS NOT NULL GROUP BY AÑO ORDER BY AÑO')
-        por_anio_rows = cursor.fetchall()
-        por_anio = {str(int(r['AÑO'])): r['cantidad'] for r in por_anio_rows if r['AÑO'] is not None}
-        
-        cursor.execute('SELECT CEDULA, NOMBRE_DE_CONTRATISTA, OBSERVACION, ESTADO FROM contratacion WHERE CEDULA IS NOT NULL AND CEDULA != \'\' LIMIT 200')
-        contratistas_raw = cursor.fetchall()
-        contratistas_agrupados = {}
-        for row in contratistas_raw:
-            cedula = row['CEDULA']
-            if cedula not in contratistas_agrupados:
-                contratistas_agrupados[cedula] = {
-                    'cedula': cedula, 'nombre': row['NOMBRE_DE_CONTRATISTA'] or 'Sin nombre',
-                    'contratos': [], 'observaciones': [], 'total_problemas': 0,
-                    'tipos_problemas': Counter()
-                }
-            contratistas_agrupados[cedula]['contratos'].append({'estado': row['ESTADO'] or 'Sin estado'})
-            obs = row['OBSERVACION'] or ''
-            if obs:
-                contratistas_agrupados[cedula]['observaciones'].append(obs)
-                obs_upper = obs.upper()
-                if 'RECHAZ' in obs_upper:
-                    contratistas_agrupados[cedula]['total_problemas'] += 1
-                    contratistas_agrupados[cedula]['tipos_problemas']['Rechazo'] += 1
-                if 'NO CONTESTA' in obs_upper:
-                    contratistas_agrupados[cedula]['total_problemas'] += 1
-                    contratistas_agrupados[cedula]['tipos_problemas']['No contesta'] += 1
-                if 'RUT' in obs_upper and ('MAL' in obs_upper or 'CORRECCION' in obs_upper):
-                    contratistas_agrupados[cedula]['total_problemas'] += 1
-                    contratistas_agrupados[cedula]['tipos_problemas']['RUT'] += 1
-                if 'REGIMEN' in obs_upper:
-                    contratistas_agrupados[cedula]['total_problemas'] += 1
-                    contratistas_agrupados[cedula]['tipos_problemas']['Régimen'] += 1
-                if 'SEDE' in obs_upper and ('INCORRECT' in obs_upper or 'PRINCIPAL' in obs_upper):
-                    contratistas_agrupados[cedula]['total_problemas'] += 1
-                    contratistas_agrupados[cedula]['tipos_problemas']['Sede'] += 1
-                if 'PTE DOCUMENTOS' in obs_upper or 'SIN DOCUMENTOS' in obs_upper:
-                    contratistas_agrupados[cedula]['total_problemas'] += 1
-                    contratistas_agrupados[cedula]['tipos_problemas']['Falta docs'] += 1
-                if 'CONTRASEÑA' in obs_upper or 'CON CLAVE' in obs_upper:
-                    contratistas_agrupados[cedula]['total_problemas'] += 1
-                    contratistas_agrupados[cedula]['tipos_problemas']['Con clave'] += 1
-        
-        for cedula, data_c in contratistas_agrupados.items():
-            data_c['total_contratos'] = len(data_c['contratos'])
-            if data_c['tipos_problemas']:
-                data_c['tipo_principal'] = data_c['tipos_problemas'].most_common(1)[0][0]
-            else:
-                data_c['tipo_principal'] = None
-        
-        top_problemas = sorted(contratistas_agrupados.values(), key=lambda x: x['total_problemas'], reverse=True)[:15]
-        
-        cursor.execute('SELECT CEDULA, NOMBRE_DE_CONTRATISTA, ESTADO FROM contratacion WHERE CEDULA IS NOT NULL AND CEDULA != \'\' GROUP BY CEDULA, NOMBRE_DE_CONTRATISTA, ESTADO LIMIT 100')
-        sin_mov_rows = cursor.fetchall()
-        sin_movimiento = []
-        conn.close()
-        
+
         return jsonify({
-            'total_contratistas_unicos': total_contratistas_unicos,
-            'total_contratos': total_contratos, 'promedio_contratos': promedio,
-            'chat': chat_data, 'estados': estados_data,
-            'tipos_problemas': tipos_problemas, 'por_anio': por_anio,
-            'top_problemas': top_problemas, 'sin_movimiento': sin_movimiento,
-            'contratistas': list(contratistas_agrupados.values())[:500]
+            'total_contratistas_unicos': cedulas_unicas,
+            'total_contratos': total_contratos,
+            'promedio_contratos': promedio,
+            'chat': chat_data,
+            'estados': estados_data,
+            'tipos_problemas': tipos_problemas,
+            'por_anio': por_anio,
+            'top_problemas': top_problemas,
+            'sin_movimiento': [],
+            'contratistas': []
         })
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error en supervisor_dashboard: {e}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 

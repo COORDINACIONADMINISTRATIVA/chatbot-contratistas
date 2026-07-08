@@ -12,8 +12,8 @@ def get_connection():
 def init_db():
     conn = get_connection()
     cursor = conn.cursor()
-    
-    # Tabla de consultas
+
+    # --- Tabla consultas ---
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS consultas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -27,8 +27,8 @@ def init_db():
             fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
-    # Tabla de administradores
+
+    # --- Tabla administradores (con columna rol) ---
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS administradores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -40,32 +40,39 @@ def init_db():
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
-    
-    # Crear usuarios SI NO EXISTEN
+
+    # --- Migración: agregar columna 'rol' si no existe ---
+    cursor.execute("PRAGMA table_info(administradores)")
+    columnas = [col[1] for col in cursor.fetchall()]
+    if 'rol' not in columnas:
+        cursor.execute("ALTER TABLE administradores ADD COLUMN rol TEXT DEFAULT 'admin'")
+        print("✅ Columna 'rol' agregada a administradores")
+
+    # --- Crear usuarios si no existen ---
     usuarios = [
         ('admin', hashlib.sha256('admin123'.encode()).hexdigest(), 'Administrador', 'admin@uniminuto.edu.co', 'admin'),
         ('supervisor', hashlib.sha256('super123'.encode()).hexdigest(), 'Supervisor', 'supervisor@uniminuto.edu.co', 'supervisor'),
     ]
-    
+
     for usuario, contrasena, nombre, email, rol in usuarios:
         try:
             cursor.execute('''
                 INSERT OR IGNORE INTO administradores (usuario, contrasena, nombre, email, rol)
                 VALUES (?, ?, ?, ?, ?)
             ''', (usuario, contrasena, nombre, email, rol))
-        except sqlite3.IntegrityError:
-            print(f"ℹ️ Usuario {usuario} ya existe")
-    
+        except sqlite3.IntegrityError as e:
+            print(f"⚠️ Error insertando {usuario}: {e}")
+
     conn.commit()
     conn.close()
-    print("✅ Base de datos inicializada con usuarios admin y supervisor")
-    
-    # Verificar que los usuarios existen
+    print("✅ Base de datos inicializada correctamente")
+
+    # Verificación opcional
     conn = get_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT usuario, rol FROM administradores")
-    usuarios_existentes = cursor.fetchall()
-    print(f"📋 Usuarios en DB: {[dict(u) for u in usuarios_existentes]}")
+    users = cursor.fetchall()
+    print(f"📋 Usuarios en DB: {[dict(u) for u in users]}")
     conn.close()
 
 if __name__ == '__main__':
