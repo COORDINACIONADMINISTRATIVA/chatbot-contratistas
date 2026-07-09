@@ -29,11 +29,13 @@ PALABRAS_NO_NOMBRE = {
     "COLOMBIA", "IDENTIFICACIÓN", "IDENTIFICACION", "UBICACIÓN", "UBICACION",
     "CLASIFICACIÓN", "CLASIFICACION", "CONTRIBUYENTE", "IMPORTANTE",
     "RESPONSABILIDADES", "CALIDADES", "ATRIBUTOS", "EXPORTADORES",
+    "SOCIOS", "MIEMBROS", "JUNTAS", "CONSORCIOS", "TEMPORALES",
+    "DIAN", "FORMULARIO", "REGISTRO", "ÚNICO", "TRIBUTARIO",
 }
 
 
 # ---------------------------------------------------------------------------
-# Extracción de campos individuales (por FORMA, no por etiqueta)
+# Extracción de campos individuales
 # ---------------------------------------------------------------------------
 
 def _extraer_tipo_documento(texto):
@@ -44,18 +46,63 @@ def _extraer_tipo_documento(texto):
 
 
 def _extraer_cedula(texto, tipo_documento):
-    """Cédula = tira de dígitos sueltos justo después del tipo de documento."""
+    """
+    Extrae la cédula/NIT de 6-10 dígitos.
+    Evita capturar el código del tipo de documento (ej: "13" de Cédula).
+    """
+    # Método 1: Buscar justo después del tipo de documento
     if tipo_documento:
-        m = re.search(
-            re.escape(tipo_documento) + r'\s+((?:\d\s*){6,10})',
-            texto, re.IGNORECASE
-        )
+        # Buscar patrón: "Cédula de Ciudadanía" seguido de dígitos con espacios
+        patron = re.escape(tipo_documento) + r'\s+([\d\s]+)'
+        m = re.search(patron, texto, re.IGNORECASE)
         if m:
-            return re.sub(r'\D', '', m.group(1))
-    # Fallback: cualquier tira de 6-10 dígitos sueltos con espacios entre cada uno
-    m = re.search(r'\b(?:\d\s+){5,9}\d\b', texto)
+            digitos = re.sub(r'\D', '', m.group(1))
+            # Filtrar para obtener solo la cédula (6-10 dígitos)
+            # Si hay más de 10 dígitos, buscar la cédula real
+            if len(digitos) > 10:
+                # Buscar cualquier grupo de 6-10 dígitos dentro
+                cedula_match = re.search(r'\d{6,10}', digitos)
+                if cedula_match:
+                    return cedula_match.group()
+            elif 6 <= len(digitos) <= 10:
+                return digitos
+
+    # Método 2: Buscar "Número de Identificación" seguido de dígitos
+    m = re.search(r'Número\s+de\s+Identificaci[oó]n\s*[:\n]?\s*([\d\s]+)', texto, re.IGNORECASE)
+    if m:
+        digitos = re.sub(r'\D', '', m.group(1))
+        if 6 <= len(digitos) <= 10:
+            return digitos
+        if len(digitos) > 10:
+            cedula_match = re.search(r'\d{6,10}', digitos)
+            if cedula_match:
+                return cedula_match.group()
+
+    # Método 3: Buscar "NIT" seguido de dígitos
+    m = re.search(r'NIT\s*[:\n]?\s*([\d\s]+)', texto, re.IGNORECASE)
+    if m:
+        digitos = re.sub(r'\D', '', m.group(1))
+        if 6 <= len(digitos) <= 10:
+            return digitos
+
+    # Método 4: Buscar en el formato "26. Número de Identificación"
+    m = re.search(r'26\.\s*Número\s+de\s+Identificaci[oó]n\s*([\d\s]+)', texto, re.IGNORECASE)
+    if m:
+        digitos = re.sub(r'\D', '', m.group(1))
+        if 6 <= len(digitos) <= 10:
+            return digitos
+
+    # Método 5: Fallback - buscar cualquier número de 6-10 dígitos
+    # que NO esté precedido por "1 3" (código de cédula)
+    m = re.search(r'(?<![1]\s[3]\s)(?:\d\s+){5,9}\d', texto)
     if m:
         return re.sub(r'\D', '', m.group())
+
+    # Fallback final: cualquier número de 6-10 dígitos
+    m = re.search(r'\b\d{6,10}\b', texto)
+    if m:
+        return m.group()
+
     return None
 
 
@@ -73,12 +120,29 @@ def _lineas_utiles(texto):
 
 def _extraer_nombre_o_razon_social(texto, tipo_contribuyente):
     """
-    Busca líneas en MAYÚSCULA sostenida (2 a 6 palabras, sin dígitos) que no
-    sean palabras clave del formulario. En un RUT esa línea es el nombre
-    completo (persona natural) o la razón social (persona jurídica), y suele
-    aparecer repetida (una vez en el bloque de identificación, otra en la
-    firma al final del documento).
+    Busca el nombre completo (persona natural) o razón social (persona jurídica).
     """
+    # Para persona jurídica, buscar específicamente "Razón social"
+    if tipo_contribuyente and 'jurídica' in tipo_contribuyente.lower():
+        # Buscar "35. Razón social" o "Razón social" seguido del nombre
+        for linea in _lineas_utiles(texto):
+            if '35.' in linea and 'RAZON SOCIAL' in linea.upper():
+                # Extraer lo que está después del número
+                partes = re.split(r'35\.\s*Raz[oó]n\s+social\s*[:\n]?', linea, flags=re.IGNORECASE)
+                if len(partes) > 1:
+                    nombre = partes[1].strip()
+                    if nombre and len(nombre) > 3 and not nombre[0].isdigit():
+                        return nombre, {'razon_social': nombre}
+
+            if 'RAZON SOCIAL' in linea.upper() or 'RAZÓN SOCIAL' in linea.upper():
+                # Buscar el nombre después de "Razón social"
+                partes = re.split(r'Raz[oó]n\s+social\s*[:\n]?', linea, flags=re.IGNORECASE)
+                if len(partes) > 1:
+                    nombre = partes[1].strip()
+                    if nombre and len(nombre) > 3 and not nombre[0].isdigit():
+                        return nombre, {'razon_social': nombre}
+
+    # Para persona natural o fallback general: buscar líneas en mayúsculas sostenidas
     candidatos = {}
     for linea in _lineas_utiles(texto):
         if not linea or any(ch.isdigit() for ch in linea):
@@ -86,6 +150,7 @@ def _extraer_nombre_o_razon_social(texto, tipo_contribuyente):
         palabras = linea.split()
         if not (2 <= len(palabras) <= 6):
             continue
+        # Verificar que todas las palabras estén en mayúsculas con acentos
         if not all(re.fullmatch(r'[A-ZÁÉÍÓÚÑ]+', p) for p in palabras):
             continue
         primera = palabras[0]
@@ -94,9 +159,15 @@ def _extraer_nombre_o_razon_social(texto, tipo_contribuyente):
         candidatos[linea] = candidatos.get(linea, 0) + 1
 
     if not candidatos:
+        # Si no hay candidatos y es persona jurídica, buscar cualquier línea larga en mayúsculas
+        if tipo_contribuyente and 'jurídica' in tipo_contribuyente.lower():
+            for linea in _lineas_utiles(texto):
+                if len(linea) > 10 and linea.isupper() and not any(ch.isdigit() for ch in linea):
+                    if not any(p in linea.upper() for p in ['COLOMBIA', 'IDENTIFICACIÓN', 'UBICACIÓN', 'DIAN']):
+                        return linea, {'razon_social': linea}
         return None, {}
 
-    # el nombre real suele repetirse (aparece también en la firma)
+    # El nombre real suele repetirse (aparece también en la firma)
     nombre = max(candidatos.items(), key=lambda kv: (kv[1], len(kv[0])))[0]
 
     partes = {}
@@ -111,6 +182,8 @@ def _extraer_nombre_o_razon_social(texto, tipo_contribuyente):
         elif len(palabras) >= 4:
             partes = {'primer_apellido': palabras[0], 'segundo_apellido': palabras[1],
                       'primer_nombre': palabras[2], 'otros_nombres': ' '.join(palabras[3:])}
+    else:
+        partes = {'razon_social': nombre}
 
     return nombre, partes
 
@@ -142,12 +215,18 @@ def _extraer_direccion_y_telefonos(texto):
             if not candidata:
                 continue
             if re.match(r'^COLOMBIA\b', candidata, re.IGNORECASE):
-                break  # ya pasamos la dirección, no hay dirección legible
-            direccion = candidata
-            break
+                break
+            # Si la línea parece una dirección (tiene números y letras)
+            if re.search(r'\d', candidata) and len(candidata) > 5:
+                direccion = candidata
+                break
+            # Si no tiene números pero es larga, puede ser dirección
+            if len(candidata) > 10 and not candidata.isupper():
+                direccion = candidata
+                break
 
         # Teléfonos: siguiente línea con dígitos
-        for j in range(idx_correo + 1, min(idx_correo + 3, len(lineas))):
+        for j in range(idx_correo + 1, min(idx_correo + 4, len(lineas))):
             digitos = re.sub(r'\D', '', lineas[j])
             if len(digitos) >= 7:
                 if len(digitos) >= 20:
@@ -164,9 +243,7 @@ def _extraer_direccion_y_telefonos(texto):
 def _extraer_actividades_economicas(texto):
     """
     Busca tiras largas de dígitos sueltos y las interpreta como
-    [código 4 dígitos][fecha AAAAMMDD 8 dígitos] pegados, validando que la
-    fecha sea real antes de aceptar el código (esto evita confundir números
-    de teléfono con actividades económicas, que era el bug anterior).
+    [código 4 dígitos][fecha AAAAMMDD 8 dígitos] pegados.
     """
     actividades = []
     for match in re.finditer(r'(?:\d[\s]*){12,60}', texto):
@@ -200,37 +277,75 @@ def _extraer_responsabilidades(texto):
 
 
 def _extraer_fecha_generacion_pdf(texto):
+    """
+    Busca la fecha de generación del PDF en el formato:
+    "Fecha generación documento PDF: DD-MM-YYYY HH:MM:SSAM/PM"
+    """
+    # Primero intentar con el formato exacto
     m = re.search(
         r'Fecha\s*generaci[oó]n\s*documento\s*PDF:?\s*(\d{1,2})-(\d{1,2})-(\d{4})\s*(\d{1,2}:\d{2}:\d{2}\s*[AP]M)?',
         texto, re.IGNORECASE
     )
-    if not m:
-        return None
-    d, mo, y, hora = m.groups()
-    try:
-        fecha = datetime(int(y), int(mo), int(d))
-    except ValueError:
-        return None
-    return {'fecha': fecha.strftime('%d/%m/%Y'), 'hora': hora, '_dt': fecha}
+    if m:
+        d, mo, y, hora = m.groups()
+        try:
+            fecha = datetime(int(y), int(mo), int(d))
+            return {'fecha': fecha.strftime('%d/%m/%Y'), 'hora': hora, '_dt': fecha}
+        except ValueError:
+            pass
+
+    # Buscar solo la fecha sin hora
+    m = re.search(r'(\d{1,2})[/-](\d{1,2})[/-](\d{4})\s*(?:$|\s)', texto)
+    if m:
+        d, mo, y = m.groups()
+        try:
+            fecha = datetime(int(y), int(mo), int(d))
+            return {'fecha': fecha.strftime('%d/%m/%Y'), 'hora': None, '_dt': fecha}
+        except ValueError:
+            pass
+
+    return None
 
 
 def _extraer_fecha_actualizacion(texto):
-    """Formato distinto al anterior: AAAA-MM-DD / HH:MM:SSPM."""
+    """
+    Busca la fecha de actualización del RUT (formato: AAAA-MM-DD / HH:MM:SSPM).
+    """
     m = re.search(r'(\d{4})-(\d{2})-(\d{2})\s*/\s*(\d{1,2}:\d{2}:\d{2}\s*[AP]M)', texto)
     if not m:
         return None
     y, mo, d, hora = m.groups()
     try:
         fecha = datetime(int(y), int(mo), int(d))
+        return {'fecha': fecha.strftime('%d/%m/%Y'), 'hora': hora, '_dt': fecha}
     except ValueError:
         return None
-    return {'fecha': fecha.strftime('%d/%m/%Y'), 'hora': hora, '_dt': fecha}
 
 
 def _extraer_marca_agua(texto):
+    """
+    Detecta la marca de agua del RUT buscando palabras clave en el texto.
+    """
     t = texto.lower()
+
+    # Buscar al inicio del documento (primeras líneas)
+    primeras_lineas = '\n'.join(t.split('\n')[:30])
+
+    # Buscar "Concepto" que indica el tipo de actualización
+    concepto_match = re.search(r'concepto\s*(\d+)\s*(actualización|actualizacion|copia|certificado|en\s*tr[áa]mite)', t, re.IGNORECASE)
+    if concepto_match:
+        tipo = concepto_match.group(2).lower()
+        if 'en trámite' in tipo or 'en tramite' in tipo:
+            return 'en_tramite', "EN TRÁMITE (no sirve todavía)"
+        if 'actualización' in tipo or 'actualizacion' in tipo:
+            return 'valido', "Actualización"
+        if 'copia' in tipo:
+            return 'valido', "Copia"
+        if 'certificado' in tipo:
+            return 'valido', "Certificado"
+
     if 'en trámite' in t or 'en tramite' in t:
-        return 'en_tramite', "El RUT dice 'EN TRÁMITE' (no sirve todavía)"
+        return 'en_tramite', "EN TRÁMITE (no sirve todavía)"
     if 'actualización de oficio' in t or 'actualizacion de oficio' in t:
         return 'valido', "Actualización de oficio"
     if 'actualización' in t or 'actualizacion' in t:
@@ -239,6 +354,7 @@ def _extraer_marca_agua(texto):
         return 'valido', "Copia"
     if 'certificado' in t:
         return 'valido', "Certificado"
+
     return 'desconocido', "No se pudo determinar la marca de agua del documento"
 
 
@@ -279,14 +395,14 @@ def extraer_datos_rut(texto):
     }
     # metadatos internos usados por el validador (no se muestran al usuario)
     datos['_fecha_referencia_dt'] = (
-        fecha_actualizacion['_dt'] if fecha_actualizacion else
-        (fecha_generacion['_dt'] if fecha_generacion else None)
+        fecha_generacion['_dt'] if fecha_generacion else
+        (fecha_actualizacion['_dt'] if fecha_actualizacion else None)
     )
     return datos
 
 
 # ---------------------------------------------------------------------------
-# Validación de reglas de negocio (lo que ya tenías, ahora sobre datos limpios)
+# Validación de reglas de negocio
 # ---------------------------------------------------------------------------
 
 class ValidadorRUT:
@@ -308,10 +424,12 @@ class ValidadorRUT:
             return resultados
 
         datos = extraer_datos_rut(texto)
-        datos_publicos = {k: v for k, v in datos.items() if not k.startswith('_')}
+        
+        # FILTRAR: Eliminar marca_agua y marca_agua_detalle de los datos mostrados
+        datos_publicos = {k: v for k, v in datos.items() if not k.startswith('_') and k not in ['marca_agua', 'marca_agua_detalle']}
         resultados['datos_extraidos'] = datos_publicos
 
-        # --- Marca de agua ---
+        # --- Marca de agua (solo para validación, no se muestra) ---
         if datos['marca_agua'] == 'en_tramite':
             resultados['errores'].append(f"❌ {datos['marca_agua_detalle']}")
         elif datos['marca_agua'] == 'valido':
@@ -332,20 +450,24 @@ class ValidadorRUT:
                 f"❌ No se encontró actividad de educación. Códigos detectados: {', '.join(codigos) if codigos else 'ninguno'}"
             )
 
-        # --- Vigencia (usa fecha de actualización si existe, si no la de generación del PDF) ---
-        fecha_dt = datos['_fecha_referencia_dt']
+        # --- Vigencia: usa SOLO la fecha de GENERACIÓN del PDF ---
+        fecha_dt = None
+        if datos.get('_fecha_referencia_dt'):
+            fecha_dt = datos['_fecha_referencia_dt']
+
         if fecha_dt:
             dias = (datetime.now() - fecha_dt).days
             if dias <= 30:
-                resultados['exitos'].append(f"✅ RUT vigente, expedido/actualizado hace {dias} días")
+                resultados['exitos'].append(f"✅ RUT generado hace {dias} días (vigente)")
             elif dias <= 365:
-                resultados['advertencias'].append(f"⚠️ El RUT tiene {dias} días. Revisa si tu proceso exige menos de 30 días")
+                # ERROR si es mayor a 30 días
+                resultados['errores'].append(f"❌ El RUT tiene {dias} días (debe ser menor a 30 días de generación)")
             else:
                 resultados['errores'].append(f"❌ El RUT es muy antiguo ({dias} días)")
         else:
-            resultados['advertencias'].append("⚠️ No se pudo leer ninguna fecha del documento")
+            resultados['advertencias'].append("⚠️ No se pudo leer la fecha de generación del documento")
 
-        # --- Cédula: se VERIFICA contra la que ya conocemos, no se confía solo en lo leído ---
+        # --- Cédula: se VERIFICA contra la que ya conocemos ---
         cedula_check = cedula_esperada or (contratista_info.get('cedula') if contratista_info else None)
         if cedula_check:
             digitos_esperados = re.sub(r'\D', '', str(cedula_check))
@@ -367,40 +489,40 @@ class ValidadorRUT:
     def generar_respuesta(self, resultados, contratista_info=None):
         """Genera una respuesta clara y concisa para el usuario"""
         lineas = []
-        
+
         # Solo mostrar nombre si viene del sistema (no del RUT)
         if contratista_info and contratista_info.get('nombre'):
             lineas.append(f"👤 **Contratista:** {contratista_info['nombre']}")
             if contratista_info.get('cedula'):
                 lineas.append(f"🆔 **Cédula:** {contratista_info['cedula']}")
             lineas.append("")
-        
+
         # Veredicto final
         if resultados['valido']:
             lineas.append("✅ **¡Tu RUT está listo para subir a la plataforma!**")
         else:
             lineas.append("❌ **Tu RUT tiene problemas que debes corregir:**")
-        
+
         lineas.append("")
-        
+
         # Mostrar éxitos (cosas que están bien)
         if resultados['exitos']:
             for e in resultados['exitos']:
                 lineas.append(f"  {e}")
-        
+
         # Mostrar errores (cosas que están mal)
         if resultados['errores']:
             lineas.append("")
             for e in resultados['errores']:
                 lineas.append(f"  {e}")
-        
+
         # Mostrar advertencias
         if resultados['advertencias']:
             lineas.append("")
             lineas.append("⚠️ **Advertencias:**")
             for a in resultados['advertencias']:
                 lineas.append(f"  {a}")
-        
+
         # Consejos útiles si hay errores
         if not resultados['valido']:
             lineas.append("")
@@ -410,11 +532,11 @@ class ValidadorRUT:
                 lineas.append("  • Espera a tener 'Actualización' o 'Copia', no 'En trámite'")
             if any(p in errores_texto for p in ['actividad', '8560']):
                 lineas.append("  • Agrega actividad económica 8560 en la DIAN (educación)")
-            if any(p in errores_texto for p in ['antiguo', 'días', 'vigencia']):
-                lineas.append("  • Saca un RUT actualizado (menos de 30 días)")
+            if any(p in errores_texto for p in ['días', 'vigente', 'antiguo']):
+                lineas.append("  • Saca un RUT actualizado (menos de 30 días de generación)")
             if any(p in errores_texto for p in ['cédula', 'cedula', 'coincide']):
                 lineas.append("  • Verifica que el RUT sea tuyo y la cédula coincida")
-        
+
         return "\n".join(lineas)
 
 
