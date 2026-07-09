@@ -3,16 +3,62 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Consultas - Asistente de Contratación</title>
+    <title>Consultas Frecuentes - Asistente de Contratación UNIMINUTO</title>
     <link rel="stylesheet" href="/static/css/estilos.css">
+    <style>
+        .chat-header .bot-avatar {
+            font-size: 2.5em;
+        }
+        .quick-questions li {
+            background: white;
+        }
+        .quick-questions li:hover {
+            background: var(--azul-uniminuto);
+            color: white;
+        }
+        .hero-consultas {
+            background: linear-gradient(135deg, var(--azul-uniminuto), #00509e);
+            color: white;
+            padding: 25px 30px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .hero-consultas h2 {
+            color: white;
+            margin: 0;
+            font-size: 1.8em;
+            font-weight: 600;
+        }
+        .hero-consultas p {
+            margin: 0;
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        .hero-consultas .icon-grande {
+            font-size: 3em;
+        }
+        @media (max-width: 768px) {
+            .hero-consultas {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
 </head>
 <body>
     <!-- HEADER -->
     <header class="header">
         <div class="header-content">
-            <div>
-                <h1>📚 Centro de Consultas</h1>
-                <p>Preguntas frecuentes sobre el proceso</p>
+            <div class="header-left">
+                <img src="/static/images/logo-uniminuto.svg" alt="UNIMINUTO" class="header-logo">
+                <div>
+                    <h1>📚 Centro de Consultas</h1>
+                    <p>Resuelve tus dudas sobre el proceso de contratación</p>
+                </div>
             </div>
         </div>
     </header>
@@ -22,12 +68,23 @@
         <div class="tabs-container">
             <a href="/" class="tab"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
             <a href="/consultas" class="tab active"><span class="tab-icon">📚</span><span>Consultas</span></a>
-            <a href="/login" class="tab"><span class="tab-icon">⚙️</span><span>Admin</span></a>
+            <a href="/login" class="tab tab-admin"><span class="tab-icon">⚙️</span><span>Admin</span></a>
         </div>
     </nav>
 
     <!-- CONTENIDO -->
     <div class="container">
+        <div class="hero-consultas">
+            <span class="icon-grande">💬</span>
+            <div>
+                <h2>Preguntas Frecuentes</h2>
+                <p>Aquí puedes preguntar sobre el proceso de contratación en general. <br>Selecciona un tema del menú lateral o escribe tu pregunta directamente.</p>
+                <p style="font-size: 0.9em; margin-top: 8px; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; display: inline-block;">
+                    ⚠️ Esta sección NO consulta cédulas. Ve a "Mi Proceso" para tu estado personal.
+                </p>
+            </div>
+        </div>
+
         <div class="main-content">
             <!-- SIDEBAR -->
             <aside class="sidebar">
@@ -41,8 +98,8 @@
                     <li onclick="enviarPregunta('cómo lleno la plataforma')">🔧 Llenar plataforma</li>
                 </ul>
                 <div class="info-box">
-                    <h4>ℹ️ Solo info general</h4>
-                    <p>Esta sección es para preguntas generales. Para ver tu proceso, ve a "Mi Proceso".</p>
+                    <h4>ℹ️ Información general</h4>
+                    <p>Las respuestas son automáticas basadas en nuestra base de conocimiento. Para dudas específicas de tu caso, contacta a tu supervisor.</p>
                 </div>
             </aside>
 
@@ -51,7 +108,7 @@
                 <div class="chat-header">
                     <div class="bot-avatar">📚</div>
                     <div>
-                        <h2>Centro de Consultas</h2>
+                        <h2>Asistente de Consultas</h2>
                         <span class="status">● En línea</span>
                     </div>
                 </div>
@@ -75,6 +132,24 @@ Aquí puedes preguntar sobre el proceso de contratación en general. Selecciona 
             </section>
         </div>
     </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="/static/images/logo-uniminuto.svg" alt="UNIMINUTO">
+                <span>Corporación Universitaria Minuto de Dios</span>
+            </div>
+            <div class="footer-links">
+                <a href="https://www.uniminuto.edu" target="_blank">Sitio web</a>
+                <a href="https://www.uniminuto.edu/contacto" target="_blank">Contacto</a>
+                <a href="https://www.uniminuto.edu/politicas" target="_blank">Políticas</a>
+            </div>
+            <div class="footer-copy">
+                &copy; 2026 UNIMINUTO Virtual - Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
 
     <script>
         const BASE_URL = window.location.origin;

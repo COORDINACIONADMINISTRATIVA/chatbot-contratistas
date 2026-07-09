@@ -3,19 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Proceso - Asistente de Contratación</title>
+    <title>Mi Proceso - Asistente de Contratación UNIMINUTO</title>
     <link rel="stylesheet" href="/static/css/estilos.css">
     <style>
+        /* Estilos específicos para index */
+        .hero-icon {
+            font-size: 2.4em;
+            margin-right: 10px;
+        }
+        .upload-area {
+            border: 2px dashed #d0d8e3;
+            border-radius: 16px;
+            padding: 30px;
+            text-align: center;
+            background: #fafcff;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .upload-area.dragover {
+            border-color: var(--azul-brillante);
+            background: #eef6ff;
+        }
+        .upload-area .btn-upload {
+            background: var(--azul-uniminuto);
+            color: white;
+            padding: 14px 32px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 1em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .upload-area .btn-upload:hover {
+            background: var(--azul-claro);
+        }
+        .upload-area .btn-upload:disabled {
+            background: #9aabbe;
+            cursor: not-allowed;
+        }
+        .upload-status {
+            display: block;
+            margin-top: 12px;
+            font-size: 0.9em;
+            color: #6a7a8e;
+        }
+        .upload-status.success { color: #28a745; }
+        .upload-status.error { color: #dc3545; }
+        .upload-status.loading { color: var(--azul-brillante); }
+        #resultado-rut {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: #f0f7ff;
+            border-left: 6px solid var(--azul-brillante);
+            white-space: pre-wrap;
+            line-height: 1.7;
+            display: none;
+        }
+        #resultado-rut.show { display: block; }
+        .separador {
+            border: none;
+            border-top: 2px dashed #dce1e8;
+            margin: 35px 0;
+        }
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .card-header h2 {
+            margin-bottom: 0;
+        }
+        .cedula-input-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+        .cedula-input-group input {
+            flex: 1;
+            min-width: 220px;
+            padding: 14px 20px;
+            border: 2px solid #e0e8f2;
+            border-radius: 30px;
+            font-size: 1em;
+        }
+        .cedula-input-group input:focus {
+            border-color: var(--azul-uniminuto);
+            outline: none;
+        }
+        .cedula-input-group button {
+            padding: 14px 32px;
+            background: var(--azul-uniminuto);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .cedula-input-group button:hover {
+            background: var(--azul-claro);
+        }
+        .subseccion-desc {
+            color: #5a6a7e;
+            font-size: 0.95em;
+            margin-bottom: 18px;
+        }
         .contrato-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            box-shadow: var(--sombra);
             margin-bottom: 20px;
-            border-left: 5px solid #003a70;
+            border-left: 6px solid var(--azul-uniminuto);
         }
         .contrato-card h2 {
-            color: #003a70;
+            color: var(--azul-uniminuto);
             margin-bottom: 15px;
         }
         .info-row {
@@ -25,21 +130,22 @@
             margin-bottom: 20px;
         }
         .info-item {
-            background: #f8f9fa;
+            background: #f8faff;
             padding: 12px;
-            border-radius: 8px;
+            border-radius: 10px;
         }
         .info-item strong {
             display: block;
-            color: #003a70;
-            font-size: 0.85em;
-            margin-bottom: 4px;
+            color: var(--azul-uniminuto);
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .estado-box {
-            background: #fff4e6;
+            background: #fff7ed;
             border-left: 4px solid #fd7e14;
             padding: 15px;
-            border-radius: 8px;
+            border-radius: 10px;
             margin: 15px 0;
         }
         .estado-box strong {
@@ -47,135 +153,31 @@
         }
         .historial-box {
             background: #f0f7ff;
-            border-left: 4px solid #003a70;
+            border-left: 4px solid var(--azul-brillante);
             padding: 20px;
-            border-radius: 8px;
+            border-radius: 10px;
             margin: 15px 0;
             line-height: 1.7;
             white-space: pre-wrap;
         }
         .historial-box strong {
-            color: #003a70;
+            color: var(--azul-uniminuto);
         }
-        .upload-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            padding: 20px;
-            background: #f8f9fa;
-            border: 2px dashed #ddd;
-            border-radius: 12px;
-            margin-top: 10px;
+        .upload-hint {
+            font-size: 0.85em;
+            color: #8a9aaa;
+            margin: 10px 0;
         }
-        .upload-area .btn-upload {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 500;
-            font-size: 1em;
-            transition: background 0.2s;
-        }
-        .upload-area .btn-upload:hover {
-            background: #218838;
-        }
-        .upload-area .btn-upload:disabled {
-            background: #6c757d;
-            cursor: not-allowed;
-        }
-        .upload-status {
-            font-size: 0.9em;
-            color: #666;
-        }
-        .upload-status.success { color: #28a745; }
-        .upload-status.error { color: #dc3545; }
-        .upload-status.loading { color: #fd7e14; }
-        #resultado-rut {
-            margin-top: 15px;
-            padding: 15px;
-            border-radius: 8px;
-            background: #f0f7ff;
-            border-left: 4px solid #003a70;
-            white-space: pre-wrap;
-            line-height: 1.6;
-            display: none;
-        }
-        #resultado-rut.show { display: block; }
-        
-        /* Separador visual */
-        .separador {
-            border: none;
-            border-top: 2px dashed #dee2e6;
-            margin: 30px 0;
-        }
-        
-        .subseccion-titulo {
-            color: #003a70;
-            font-size: 1em;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-        .subseccion-desc {
-            color: #666;
-            font-size: 0.9em;
-            margin-bottom: 15px;
-        }
-        
-        /* Campos de cédula separados */
-        .cedula-input-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
-        .cedula-input-group input {
-            flex: 1;
-            min-width: 200px;
-            padding: 12px 18px;
-            border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 1em;
-        }
-        .cedula-input-group input:focus {
-            border-color: #003a70;
-            outline: none;
-        }
-        .cedula-input-group button {
-            padding: 12px 30px;
-            background: #003a70;
-            color: white;
-            border: none;
-            border-radius: 25px;
-            cursor: pointer;
-            font-weight: 500;
-        }
-        .cedula-input-group button:hover {
-            background: #0056b3;
-        }
-        
-        .alert {
-            padding: 15px 20px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            border-left: 4px solid;
-        }
-        .alert-info { background: #d1ecf1; border-color: #17a2b8; color: #0c5460; }
-        .alert-success { background: #d4edda; border-color: #28a745; color: #155724; }
-        .alert-warning { background: #fff3cd; border-color: #ffc107; color: #856404; }
-        .alert-danger { background: #f8d7da; border-color: #dc3545; color: #721c24; }
-        
         @media (max-width: 768px) {
             .cedula-input-group {
                 flex-direction: column;
             }
-            .cedula-input-group input {
-                width: 100%;
-            }
+            .cedula-input-group input, 
             .cedula-input-group button {
                 width: 100%;
+            }
+            .upload-area {
+                padding: 20px;
             }
         }
     </style>
@@ -184,9 +186,12 @@
     <!-- HEADER -->
     <header class="header">
         <div class="header-content">
-            <div>
-                <h1>🔍 Mi Proceso</h1>
-                <p>Consulta el estado de tu contratación</p>
+            <div class="header-left">
+                <img src="/static/images/logo-uniminuto.svg" alt="UNIMINUTO" class="header-logo">
+                <div>
+                    <h1>🔍 Mi Proceso de Contratación</h1>
+                    <p>Consulta el estado de tu vinculación con UNIMINUTO Virtual</p>
+                </div>
             </div>
         </div>
     </header>
@@ -196,21 +201,22 @@
         <div class="tabs-container">
             <a href="/" class="tab active"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
             <a href="/consultas" class="tab"><span class="tab-icon">📚</span><span>Consultas</span></a>
-            <a href="/login" class="tab"><span class="tab-icon">⚙️</span><span>Admin</span></a>
+            <a href="/login" class="tab tab-admin"><span class="tab-icon">⚙️</span><span>Admin</span></a>
         </div>
     </nav>
 
     <!-- CONTENIDO -->
     <div class="container">
         
-        <!-- ============================================================ -->
         <!-- SECCIÓN 1: CONSULTAR CÉDULA (INDEPENDIENTE) -->
-        <!-- ============================================================ -->
         <div class="card">
-            <h2>🔍 Consultar Mi Proceso</h2>
-            <p style="color: #666; margin-bottom: 20px;">
-                Ingresa tu número de cédula para ver el estado actual y el historial de tu proceso.
-                <br><small style="color: #999;">⚠️ Esta consulta es independiente de la validación del RUT.</small>
+            <div class="card-header">
+                <span class="hero-icon">📋</span>
+                <h2>Consultar mi estado</h2>
+            </div>
+            <p class="subseccion-desc">
+                Ingresa tu número de cédula para ver el estado actual de tu(s) contrato(s) y el historial completo de tu proceso.
+                <br><small style="color: #8a9aaa;">⚠️ Esta consulta es independiente de la validación del RUT.</small>
             </p>
             
             <div class="cedula-input-group">
@@ -225,39 +231,59 @@
 
         <hr class="separador">
 
-        <!-- ============================================================ -->
         <!-- SECCIÓN 2: VALIDAR RUT (100% INDEPENDIENTE) -->
-        <!-- ============================================================ -->
         <div class="card">
-            <h2>📄 Validar mi RUT</h2>
-            <p style="color: #666; margin-bottom: 15px; font-size: 0.95em;">
+            <div class="card-header">
+                <span class="hero-icon">📄</span>
+                <h2>Validar mi RUT</h2>
+            </div>
+            <p class="subseccion-desc">
                 Sube tu RUT en formato PDF para que lo revisemos automáticamente.
-                <br><small style="color: #999;">⚠️ Esta validación es independiente de la consulta de cédula.</small>
+                <br><small style="color: #8a9aaa;">⚠️ Esta validación es independiente de la consulta de cédula.</small>
             </p>
             
-            <div class="upload-area">
-                <div style="width: 100%; max-width: 400px;">
-                    <label style="display: block; font-weight: 500; margin-bottom: 5px; font-size: 0.9em; color: #555;">
+            <div class="upload-area" id="upload-area">
+                <div style="width: 100%; max-width: 450px; margin: 0 auto;">
+                    <label style="display: block; font-weight: 500; margin-bottom: 6px; color: #3a4a5e;">
                         📝 Cédula del RUT (opcional):
                     </label>
                     <input type="text" id="cedula-rut" placeholder="Ej: 1234567890" 
-                           style="width: 100%; padding: 10px 15px; border: 2px solid #e0e0e0; border-radius: 25px; font-size: 0.95em; margin-bottom: 12px;">
-                    <p style="font-size: 0.8em; color: #999; margin-bottom: 12px;">
-                        Si dejas este campo vacío, solo se mostrarán los datos extraídos del PDF sin verificar contra una cédula específica.
+                           style="width: 100%; padding: 12px 18px; border: 2px solid #e0e8f2; border-radius: 30px; font-size: 0.95em; margin-bottom: 14px;">
+                    <p class="upload-hint">
+                        Si dejas este campo vacío, solo se mostrarán los datos extraídos del PDF sin verificar contra una cédula.
                     </p>
                 </div>
                 
                 <input type="file" id="rut-file" accept=".pdf" style="display:none;" onchange="subirRut()">
-                <button class="btn-upload" onclick="document.getElementById('rut-file').click()" id="btn-upload-rut">
-                    📄 Seleccionar RUT (PDF)
+                <button class="btn-upload" id="btn-upload-rut" onclick="document.getElementById('rut-file').click()">
+                    📤 Seleccionar RUT (PDF)
                 </button>
                 <span class="upload-status" id="upload-status">Archivo seleccionado: Ninguno</span>
+                <p class="upload-hint" style="margin-top: 8px;">💡 También puedes arrastrar y soltar tu archivo PDF aquí.</p>
             </div>
 
             <!-- Resultado del análisis del RUT -->
             <div id="resultado-rut"></div>
         </div>
     </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-logo">
+                <img src="/static/images/logo-uniminuto.svg" alt="UNIMINUTO">
+                <span>Corporación Universitaria Minuto de Dios</span>
+            </div>
+            <div class="footer-links">
+                <a href="https://www.uniminuto.edu" target="_blank">Sitio web</a>
+                <a href="https://www.uniminuto.edu/contacto" target="_blank">Contacto</a>
+                <a href="https://www.uniminuto.edu/politicas" target="_blank">Políticas</a>
+            </div>
+            <div class="footer-copy">
+                &copy; 2026 UNIMINUTO Virtual - Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
 
     <script>
         // ================================================================
@@ -365,19 +391,42 @@
                     valor = valor.join(', ');
                 }
 
-                filas += `<tr><td style="padding:4px 10px;font-weight:600;white-space:nowrap;">${etiqueta}</td><td style="padding:4px 10px;">${valor}</td></tr>`;
+                filas += `<tr><td style="padding:6px 12px;font-weight:600;white-space:nowrap;">${etiqueta}</td><td style="padding:6px 12px;">${valor}</td></tr>`;
             }
 
             if (!filas) return '';
 
             return `
-                <div style="margin-top:14px;">
+                <div style="margin-top:16px;">
                     <strong>📄 Datos extraídos del RUT:</strong>
-                    <table style="margin-top:6px;border-collapse:collapse;font-size:0.92em;width:100%;">
+                    <table style="margin-top:8px;border-collapse:collapse;font-size:0.9em;width:100%;">
                         ${filas}
                     </table>
                 </div>`;
         }
+
+        // Drag & Drop
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('rut-file');
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileInput.dispatchEvent(new Event('change'));
+            }
+        });
 
         async function subirRut() {
             const fileInput = document.getElementById('rut-file');
@@ -418,10 +467,7 @@
             const formData = new FormData();
             formData.append('rut', file);
             
-            // ============================================================
-            // IMPORTANTE: La cédula se toma SOLO del campo de la sección RUT
-            // NO usa localStorage, NO se vincula con la consulta de cédula
-            // ============================================================
+            // Cédula del RUT (independiente)
             const cedulaRut = document.getElementById('cedula-rut').value.trim();
             if (cedulaRut) {
                 formData.append('cedula', cedulaRut);
@@ -442,14 +488,10 @@
                     return;
                 }
                 
-                // Mostrar resultado
                 resultadoRut.innerHTML = data.respuesta || '✅ RUT analizado correctamente';
-
-                // Mostrar además el JSON de datos extraídos en una tabla legible
                 if (data.datos) {
                     resultadoRut.innerHTML += renderDatosRutTabla(data.datos);
                 }
-
                 resultadoRut.className = 'show';
                 resultadoRut.style.display = 'block';
                 
@@ -485,9 +527,7 @@
             }
         });
 
-        // ================================================================
         // Enter para consultar cédula (sección 1)
-        // ================================================================
         document.getElementById('cedula-consulta').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -495,18 +535,15 @@
             }
         });
 
-        // ================================================================
         // Enter para el campo de cédula del RUT (sección 2)
-        // ================================================================
         document.getElementById('cedula-rut').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                // Disparar el click del botón de subir archivo
                 document.getElementById('rut-file').click();
             }
         });
 
-        console.log('✅ index.html cargado - Consulta de cédula y validación de RUT son 100% independientes');
+        console.log('✅ index.html mejorado - Consulta y validación de RUT 100% independientes, drag & drop activado');
     </script>
 </body>
 </html>
