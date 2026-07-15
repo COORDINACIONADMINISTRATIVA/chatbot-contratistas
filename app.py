@@ -223,28 +223,29 @@ def mi_proceso():
         if seguimiento:
             solpedidos = {}
             for s in seguimiento:
-                solpedido = str(s.get('N SOLPEDIDO', 'Desconocido'))
+                # Usar "SOLPEDIDO" (sin N)
+                solpedido = str(s.get('SOLPEDIDO', 'Desconocido'))
                 if solpedido not in solpedidos:
                     solpedidos[solpedido] = {
                         'solpedido': solpedido,
-                        'nombre': s.get('NOMBRE DE CONTRATISTA', 'Sin nombre'),
+                        'nombre': s.get('NOMBRE DEL PROVEEDOR', 'Sin nombre'),
                         'cedula': s.get('CEDULA', cedula),
                         'pagos': []
                     }
                 
-                # Extraer info del POS
-                info_pos = lector_seguimiento.extraer_info_pos(s.get('OBJETO DEL CONTRATO', ''))
+                # Extraer info del POS desde "TEXTO DE POS"
+                info_pos = lector_seguimiento.extraer_info_pos(s.get('TEXTO DE POS', ''))
                 
-                estado = s.get('ESTADO', 'Sin estado')
+                estado = s.get('ESTADO SOLPEDIDO', 'Sin estado')
                 
                 solpedidos[solpedido]['pagos'].append({
                     'pos': str(s.get('POS', '')),
                     'estado': estado,
-                    'observacion': s.get('OBSERVACIÓN', 'Sin observaciones'),
+                    'observacion': s.get('OBSERVACIÓN SOLPEDIDO', 'Sin observaciones'),
                     'tipo_pago': info_pos.get('tipo_pago', 'Pago'),
                     'mes': info_pos.get('mes', ''),
-                    'objeto': info_pos.get('objeto', ''),  # NUEVO: descripción del contrato
-                    'valor': s.get('VALOR_DEL_CONTRATO', 0),
+                    'objeto': info_pos.get('objeto', ''),
+                    'valor': s.get('VALOR TOTAL', 0),
                     'es_eliminado': 'Eliminado' in str(estado) or 'ELIMINADO' in str(estado).upper()
                 })
             
