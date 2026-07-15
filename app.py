@@ -14,7 +14,7 @@ from collections import Counter
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 import pandas as pd
-
+from contratacion.lector_seguimiento import lector_seguimiento
 
 # ==================== IMPORTS AL INICIO ====================
 # Agregar el directorio actual al path
@@ -176,7 +176,7 @@ def consultar_contratista_api():
 
 @app.route('/api/mi-proceso', methods=['POST'])
 def mi_proceso():
-    """Devuelve el estado del contratista con observaciones"""
+    """Devuelve el estado del contratista con observaciones y pagos"""
     data = request.get_json()
     cedula = data.get('cedula', '').strip()
     
@@ -184,38 +184,84 @@ def mi_proceso():
         return jsonify({'error': 'Necesito la cédula'}), 400
     
     try:
+        # 1. Buscar en Excel de contratistas (resumen)
         registros = lector.buscar_por_cedula(cedula)
         
-        if not registros:
+        # 2. Buscar en Excel de seguimiento (detalle de pagos)
+        seguimiento = lector_seguimiento.buscar_por_cedula(cedula)
+        
+        contratistas = []
+        
+        # 3. Si hay registros del resumen, agregarlos
+        if registros:
+            for r in registros:
+                # Traducir estado
+                estado_original = r.get('ESTADO', 'Sin estado')
+                estado_traducido = traducir_estado(estado_original)
+                if not estado_traducido:
+                    estado_traducido = f"📋 {estado_original}"
+                
+                # Traducir observación
+                obs_original = r.get('OBSERVACIÓN', '')
+                obs_traducida = traducir_observacion(obs_original)
+                if not obs_traducida or len(obs_traducida) < 10:
+                    if obs_original and str(obs_original).lower() not in ['nan', 'none', '']:
+                        obs_traducida = f"📋 {obs_original}"
+                    else:
+                        obs_traducida = "📋 Sin información adicional"
+                
+                contratistas.append({
+                    'nombre': r.get('NOMBRE DE CONTRATISTA', 'Sin nombre'),
+                    'cedula': r.get('CEDULA', cedula),
+                    'estado': estado_traducido,
+                    'observacion': obs_traducida,
+                    'año': str(r.get('AÑO', '')),
+                    'tipo': 'resumen'
+                })
+        
+        # 4. Si hay registros de seguimiento, agrupar por SOLPEDIDO
+        if seguimiento:
+            solpedidos = {}
+            for s in seguimiento:
+                solpedido = str(s.get('N SOLPEDIDO', 'Desconocido'))
+                if solpedido not in solpedidos:
+                    solpedidos[solpedido] = {
+                        'solpedido': solpedido,
+                        'nombre': s.get('NOMBRE DE CONTRATISTA', 'Sin nombre'),
+                        'cedula': s.get('CEDULA', cedula),
+                        'pagos': []
+                    }
+                
+                # Extraer info del POS
+                info_pos = lector_seguimiento.extraer_info_pos(s.get('OBJETO DEL CONTRATO', ''))
+                
+                estado = s.get('ESTADO', 'Sin estado')
+                
+                solpedidos[solpedido]['pagos'].append({
+                    'pos': str(s.get('POS', '')),
+                    'estado': estado,
+                    'observacion': s.get('OBSERVACIÓN', 'Sin observaciones'),
+                    'tipo_pago': info_pos.get('tipo_pago', 'Pago'),
+                    'mes': info_pos.get('mes', ''),
+                    'valor': s.get('VALOR_DEL_CONTRATO', 0),
+                    'es_eliminado': 'Eliminado' in str(estado) or 'ELIMINADO' in str(estado).upper()
+                })
+            
+            # Agregar a la respuesta
+            for solpedido, data_s in solpedidos.items():
+                contratistas.append({
+                    'nombre': data_s['nombre'],
+                    'cedula': data_s['cedula'],
+                    'solpedido': solpedido,
+                    'pagos': data_s['pagos'],
+                    'total_pagos': len(data_s['pagos']),
+                    'tipo': 'seguimiento'
+                })
+        
+        if not contratistas:
             return jsonify({
                 'encontrado': False,
                 'mensaje': f'No encontré información con la cédula {cedula}. Verifica que esté bien escrita.'
-            })
-        
-        contratistas = []
-        for r in registros:
-            # Traducir estado
-            estado_original = r.get('ESTADO', 'Sin estado')
-            estado_traducido = traducir_estado(estado_original)
-            if not estado_traducido:
-                estado_traducido = f"📋 {estado_original}"
-            
-            # Traducir observación
-            obs_original = r.get('OBSERVACIÓN', '')
-            obs_traducida = traducir_observacion(obs_original)
-            
-            if not obs_traducida or len(obs_traducida) < 10:
-                if obs_original and str(obs_original).lower() not in ['nan', 'none', '']:
-                    obs_traducida = f"📋 {obs_original}"
-                else:
-                    obs_traducida = "📋 Sin información adicional"
-            
-            contratistas.append({
-                'nombre': r.get('NOMBRE DE CONTRATISTA', 'Sin nombre'),
-                'cedula': r.get('CEDULA', cedula),
-                'estado': estado_traducido,
-                'observacion': obs_traducida,
-                'año': str(r.get('AÑO', ''))
             })
         
         return jsonify({
@@ -223,6 +269,7 @@ def mi_proceso():
             'cantidad': len(contratistas),
             'contratistas': contratistas
         })
+        
     except Exception as e:
         import traceback
         print("ERROR en mi-proceso:", e)
@@ -232,7 +279,6 @@ def mi_proceso():
             'mensaje': f'Error al procesar: {str(e)}',
             'error_tecnico': str(e)
         }), 500
-
 
 # ==================== API FEEDBACK ====================
 
