@@ -504,6 +504,11 @@ def traducir_linea(linea):
     if 'PROCESO FINALIZADO' in l or 'CONTRATISTA ES CAMBIADO' in l:
         return '✅ Proceso finalizado (fuiste cambiado)'
     
+    if 'SOLPEDIDO ELIMINADO' in l:
+        return '❌ Este contrato fue eliminado. No se generarán pagos.'
+    if 'RENOVACIÓN LICENCIA' in l:
+        return '🔄 Renovación de licencia solicitada.'
+    
     # Si no matcheó ningún patrón, devolver la línea limpia con fecha
     fecha = extraer_fecha(linea)
     if fecha:

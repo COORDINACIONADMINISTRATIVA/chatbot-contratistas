@@ -168,6 +168,41 @@
             color: #8a9aaa;
             margin: 10px 0;
         }
+        .pagos-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        .pagos-table th {
+            background: var(--azul-uniminuto);
+            color: white;
+            padding: 8px 10px;
+            text-align: left;
+        }
+        .pagos-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #eef2f7;
+        }
+        .pagos-table tr.eliminado {
+            background: #f8f0f0;
+            opacity: 0.7;
+        }
+        .badge-estado {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            font-weight: 600;
+        }
+        .badge-eliminado {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .badge-activo {
+            background: #d4edda;
+            color: #155724;
+        }
         @media (max-width: 768px) {
             .cedula-input-group {
                 flex-direction: column;
@@ -178,6 +213,12 @@
             }
             .upload-area {
                 padding: 20px;
+            }
+            .pagos-table {
+                font-size: 0.8em;
+            }
+            .pagos-table th, .pagos-table td {
+                padding: 5px;
             }
         }
     </style>
@@ -323,32 +364,64 @@
                 let html = '';
                 
                 if (data.cantidad > 1) {
-                    html += '<div class="alert alert-info">📋 Tienes <strong>' + data.cantidad + '</strong> contratos registrados. Te mostramos el detalle de cada uno.</div>';
+                    html += '<div class="alert alert-info">📋 Tienes <strong>' + data.cantidad + '</strong> registros asociados.</div>';
                 }
                 
+                // Procesar cada contratista
                 data.contratistas.forEach((c, index) => {
-                    const numContrato = data.cantidad > 1 ? '<div class="alert alert-warning"><strong>📄 CONTRATO #' + (index + 1) + '</strong></div>' : '';
-                    
-                    html += '<div class="contrato-card">';
-                    html += numContrato;
-                    html += '<h2>👤 ' + (c.nombre || 'Sin nombre') + '</h2>';
-                    
-                    html += '<div class="info-row">';
-                    html += '<div class="info-item"><strong>🆔 Cédula</strong>' + (c.cedula || '-') + '</div>';
-                    html += '<div class="info-item"><strong>📅 Año</strong>' + (c.año || '-') + '</div>';
-                    html += '</div>';
-                    
-                    html += '<div class="estado-box">';
-                    html += '<strong>📊 Estado actual:</strong><br>';
-                    html += c.estado || 'Sin estado registrado';
-                    html += '</div>';
-                    
-                    html += '<h3>📝 Historial del Proceso</h3>';
-                    html += '<div class="historial-box">';
-                    html += c.observacion || '📋 No hay información adicional registrada en este momento.';
-                    html += '</div>';
-                    
-                    html += '</div>';
+                    if (c.tipo === 'resumen') {
+                        // Contrato resumen (Excel principal)
+                        const numContrato = data.cantidad > 1 ? '<div class="alert alert-warning"><strong>📄 CONTRATO #' + (index + 1) + '</strong></div>' : '';
+                        html += '<div class="contrato-card">';
+                        html += numContrato;
+                        html += '<h2>👤 ' + (c.nombre || 'Sin nombre') + '</h2>';
+                        html += '<div class="info-row">';
+                        html += '<div class="info-item"><strong>🆔 Cédula</strong>' + (c.cedula || '-') + '</div>';
+                        html += '<div class="info-item"><strong>📅 Año</strong>' + (c.año || '-') + '</div>';
+                        html += '</div>';
+                        html += '<div class="estado-box"><strong>📊 Estado actual:</strong><br>' + (c.estado || 'Sin estado registrado') + '</div>';
+                        html += '<h3>📝 Historial del Proceso</h3>';
+                        html += '<div class="historial-box">' + (c.observacion || '📋 No hay información adicional registrada en este momento.') + '</div>';
+                        html += '</div>';
+                    } else if (c.tipo === 'seguimiento') {
+                        // Detalle de pagos (Excel de seguimiento)
+                        html += '<div class="contrato-card" style="border-left-color: #28a745;">';
+                        html += '<h2>📄 Solicitud #' + c.solpedido + '</h2>';
+                        html += '<div class="info-row">';
+                        html += '<div class="info-item"><strong>👤 Nombre</strong>' + (c.nombre || 'Sin nombre') + '</div>';
+                        html += '<div class="info-item"><strong>🆔 Cédula</strong>' + (c.cedula || '-') + '</div>';
+                        html += '<div class="info-item"><strong>📦 Total pagos</strong>' + (c.total_pagos || 0) + '</div>';
+                        html += '</div>';
+                        
+                        if (c.pagos && c.pagos.length > 0) {
+                            html += '<h3>💳 Detalle de Pagos</h3>';
+                            html += '<table class="pagos-table">';
+                            html += '<thead><tr><th>POS</th><th>Estado</th><th>Tipo Pago</th><th>Mes</th><th>Valor</th><th>Objeto</th></tr></thead>';
+                            html += '<tbody>';
+                            c.pagos.forEach(p => {
+                                const claseEliminado = p.es_eliminado ? 'eliminado' : '';
+                                const badgeEstado = p.es_eliminado ? '<span class="badge-estado badge-eliminado">Eliminado</span>' : '<span class="badge-estado badge-activo">Activo</span>';
+                                html += `<tr class="${claseEliminado}">
+                                    <td>${p.pos || '-'}</td>
+                                    <td>${badgeEstado}</td>
+                                    <td>${p.tipo_pago || 'Pago'}</td>
+                                    <td>${p.mes || '-'}</td>
+                                    <td>${p.valor ? '$' + Number(p.valor).toLocaleString('es-CO') : '-'}</td>
+                                    <td style="max-width: 200px; font-size: 0.85em;">${p.objeto || '-'}</td>
+                                </tr>`;
+                            });
+                            html += '</tbody></table>';
+                        } else {
+                            html += '<p>No hay pagos registrados para esta solicitud.</p>';
+                        }
+                        
+                        // Mostrar observación general del solpedido (si existe)
+                        if (c.observacion) {
+                            html += '<h3>📝 Observación</h3>';
+                            html += '<div class="historial-box">' + c.observacion + '</div>';
+                        }
+                        html += '</div>';
+                    }
                 });
                 
                 resultadoDiv.innerHTML = html;
@@ -544,6 +617,7 @@
         });
 
         console.log('✅ index.html mejorado - Consulta y validación de RUT 100% independientes, drag & drop activado');
+        console.log('✅ Ahora muestra el detalle de pagos (tipo, mes, objeto, estado)');
     </script>
 </body>
 </html>

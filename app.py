@@ -243,6 +243,7 @@ def mi_proceso():
                     'observacion': s.get('OBSERVACIÓN', 'Sin observaciones'),
                     'tipo_pago': info_pos.get('tipo_pago', 'Pago'),
                     'mes': info_pos.get('mes', ''),
+                    'objeto': info_pos.get('objeto', ''),  # NUEVO: descripción del contrato
                     'valor': s.get('VALOR_DEL_CONTRATO', 0),
                     'es_eliminado': 'Eliminado' in str(estado) or 'ELIMINADO' in str(estado).upper()
                 })
@@ -279,6 +280,7 @@ def mi_proceso():
             'mensaje': f'Error al procesar: {str(e)}',
             'error_tecnico': str(e)
         }), 500
+
 
 # ==================== API FEEDBACK ====================
 
