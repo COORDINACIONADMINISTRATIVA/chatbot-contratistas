@@ -1,6 +1,6 @@
 import sqlite3
 import os
-import hashlib
+import bcrypt
 
 def get_connection():
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -49,9 +49,10 @@ def init_db():
         print("✅ Columna 'rol' agregada a administradores")
 
     # --- Crear usuarios si no existen ---
+# Crear usuarios si no existen (con bcrypt)
     usuarios = [
-        ('admin', hashlib.sha256('admin123'.encode()).hexdigest(), 'Administrador', 'admin@uniminuto.edu.co', 'admin'),
-        ('supervisor', hashlib.sha256('super123'.encode()).hexdigest(), 'Supervisor', 'supervisor@uniminuto.edu.co', 'supervisor'),
+        ('admin', bcrypt.hashpw('admin123'.encode(), bcrypt.gensalt()).decode(), 'Administrador', 'admin@uniminuto.edu.co', 'admin'),
+        ('supervisor', bcrypt.hashpw('super123'.encode(), bcrypt.gensalt()).decode(), 'Supervisor', 'supervisor@uniminuto.edu.co', 'supervisor'),
     ]
 
     for usuario, contrasena, nombre, email, rol in usuarios:

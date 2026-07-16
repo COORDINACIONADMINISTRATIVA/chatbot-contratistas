@@ -1,26 +1,33 @@
 ﻿"""
 Chatbot de Contratación - API Completa
 Arquitectura: Embeddings (Sentence-BERT) + IA Generativa (Llama 3.1) + Excel
-Versión corregida - imports al inicio
+Versión con mejoras de seguridad: bcrypt, cookies seguras, CORS restringido, rate limiting
 """
 import os
 import sys
 import uuid
 import hashlib
 import time
+import logging
 from datetime import datetime, timedelta
 from functools import wraps
-from collections import Counter
+from collections import defaultdict
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 import pandas as pd
+import bcrypt  # ✅ IMPORTACIÓN GLOBAL (correcta)
+
 from contratacion.lector_seguimiento import lector_seguimiento
 
+# ==================== CONFIGURACIÓN DE LOGGING ====================
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+
 # ==================== IMPORTS AL INICIO ====================
-# Agregar el directorio actual al path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-# Imports del proyecto
 from database.db import get_connection, init_db
 from contratacion.chatbot_contratista import responder_contratista
 from contratacion.lector import lector
@@ -32,16 +39,20 @@ FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 STATIC_DIR = os.path.join(FRONTEND_DIR, 'static')
 
 app = Flask(__name__, static_folder=STATIC_DIR, static_url_path='/static')
-app.secret_key = 'clave-secreta-cambiala-2026-jhfjdsfkjdshfkjsdhfkj'
+app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
-# Configuración de sesiones
-app.permanent_session_lifetime = timedelta(hours=8)
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_HTTPONLY'] = False
-app.config['SESSION_COOKIE_SECURE'] = False
+# Seguridad de cookies
+app.config['SESSION_COOKIE_SAMESITE'] = 'Strict'
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SECURE'] = os.environ.get('SESSION_COOKIE_SECURE', 'False').lower() == 'true'
 app.config['SESSION_COOKIE_DOMAIN'] = None
 
-CORS(app, supports_credentials=True)
+# CORS restringido
+allowed_origins = [
+    "http://localhost:5000",
+    "https://chatbot-contratistas.onrender.com",
+]
+CORS(app, origins=allowed_origins, supports_credentials=True)
 
 print(f"Frontend sirviendo desde: {FRONTEND_DIR}")
 print(f"Estáticos sirviendo desde: {STATIC_DIR}")
@@ -50,41 +61,35 @@ print(f"CSS existe: {os.path.exists(os.path.join(STATIC_DIR, 'css', 'estilos.css
 # Inicializar base de datos
 init_db()
 
+# ==================== RATE LIMITING (LOGIN) ====================
+login_attempts = defaultdict(list)
 
 # ==================== RUTAS DE PÁGINAS ====================
-
 @app.route('/')
 def index():
     return send_from_directory(FRONTEND_DIR, 'index.html')
-
 
 @app.route('/consultas')
 def consultas():
     return send_from_directory(FRONTEND_DIR, 'consultas.html')
 
-
 @app.route('/buscar')
 def buscar():
     return send_from_directory(FRONTEND_DIR, 'buscar.html')
-
 
 @app.route('/login')
 def login_page():
     return send_from_directory(FRONTEND_DIR, 'login.html')
 
-
 @app.route('/admin')
 def admin():
     return send_from_directory(FRONTEND_DIR, 'admin.html')
-
 
 @app.route('/supervisor')
 def supervisor_page():
     return send_from_directory(FRONTEND_DIR, 'supervisor.html')
 
-
 # ==================== API CHAT ====================
-
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
@@ -129,9 +134,7 @@ def chat():
         'timestamp': datetime.now().isoformat()
     })
 
-
-# ==================== API CONTRATISTAS (CRUDO) ====================
-
+# ==================== API CONTRATISTAS ====================
 @app.route('/api/contratista', methods=['POST'])
 def consultar_contratista_api():
     data = request.get_json()
@@ -171,12 +174,9 @@ def consultar_contratista_api():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# ==================== API MI PROCESO (TRADUCIDO) ====================
-
+# ==================== API MI PROCESO ====================
 @app.route('/api/mi-proceso', methods=['POST'])
 def mi_proceso():
-    """Devuelve el estado del contratista con observaciones y pagos"""
     data = request.get_json()
     cedula = data.get('cedula', '').strip()
     
@@ -184,24 +184,17 @@ def mi_proceso():
         return jsonify({'error': 'Necesito la cédula'}), 400
     
     try:
-        # 1. Buscar en Excel de contratistas (resumen)
         registros = lector.buscar_por_cedula(cedula)
-        
-        # 2. Buscar en Excel de seguimiento (detalle de pagos)
         seguimiento = lector_seguimiento.buscar_por_cedula(cedula)
-        
         contratistas = []
         
-        # 3. Si hay registros del resumen, agregarlos
         if registros:
             for r in registros:
-                # Traducir estado
                 estado_original = r.get('ESTADO', 'Sin estado')
                 estado_traducido = traducir_estado(estado_original)
                 if not estado_traducido:
                     estado_traducido = f"📋 {estado_original}"
                 
-                # Traducir observación
                 obs_original = r.get('OBSERVACIÓN', '')
                 obs_traducida = traducir_observacion(obs_original)
                 if not obs_traducida or len(obs_traducida) < 10:
@@ -219,11 +212,9 @@ def mi_proceso():
                     'tipo': 'resumen'
                 })
         
-        # 4. Si hay registros de seguimiento, agrupar por SOLPEDIDO
         if seguimiento:
             solpedidos = {}
             for s in seguimiento:
-                # Usar "SOLPEDIDO" (sin N)
                 solpedido = str(s.get('SOLPEDIDO', 'Desconocido'))
                 if solpedido not in solpedidos:
                     solpedidos[solpedido] = {
@@ -233,9 +224,7 @@ def mi_proceso():
                         'pagos': []
                     }
                 
-                # Extraer info del POS desde "TEXTO DE POS"
                 info_pos = lector_seguimiento.extraer_info_pos(s.get('TEXTO DE POS', ''))
-                
                 estado = s.get('ESTADO SOLPEDIDO', 'Sin estado')
                 
                 solpedidos[solpedido]['pagos'].append({
@@ -249,7 +238,6 @@ def mi_proceso():
                     'es_eliminado': 'Eliminado' in str(estado) or 'ELIMINADO' in str(estado).upper()
                 })
             
-            # Agregar a la respuesta
             for solpedido, data_s in solpedidos.items():
                 contratistas.append({
                     'nombre': data_s['nombre'],
@@ -282,9 +270,7 @@ def mi_proceso():
             'error_tecnico': str(e)
         }), 500
 
-
 # ==================== API FEEDBACK ====================
-
 @app.route('/api/feedback', methods=['POST'])
 def feedback():
     data = request.get_json()
@@ -307,16 +293,12 @@ def feedback():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
-# ==================== SUBIR Y VALIDAR RUT ====================
-
+# ==================== VALIDAR RUT ====================
 @app.route('/api/validar-rut', methods=['POST'])
 def validar_rut():
-    """Recibe un RUT en PDF, lo valida y devuelve el resultado"""
     from werkzeug.utils import secure_filename
     from contratacion.validador_rut import validar_rut_archivo    
     
-    # Detectar nombre del campo
     archivo = None
     for key in ['archivo', 'rut', 'file']:
         if key in request.files:
@@ -337,7 +319,6 @@ def validar_rut():
     
     cedula = request.form.get('cedula', '').strip()
     
-    # Obtener info del contratista si hay cédula
     contratista_info = None
     if cedula:
         try:
@@ -347,7 +328,6 @@ def validar_rut():
         except:
             pass
     
-    # Guardar archivo temporalmente
     UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     
@@ -356,15 +336,12 @@ def validar_rut():
     archivo.save(ruta_archivo)
     
     try:
-        # Analizar RUT (devuelve el texto legible y el dict con los datos)
         respuesta, resultado = validar_rut_archivo(ruta_archivo, cedula)
         
-        # Agregar info del contratista a los datos extraídos
         if contratista_info:
             resultado['datos_extraidos']['nombre_contratista'] = contratista_info.get('nombre')
             resultado['datos_extraidos']['cedula_contratista'] = contratista_info.get('cedula')
         
-        # Limpiar
         try:
             os.remove(ruta_archivo)
         except:
@@ -390,9 +367,7 @@ def validar_rut():
             'error': f'Error al procesar el RUT: {str(e)}'
         }), 500
 
-
 # ==================== ADMINISTRACIÓN ====================
-
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -401,7 +376,7 @@ def admin_required(f):
         return f(*args, **kwargs)
     return decorated
 
-
+# ==================== LOGIN CON BCRYPT Y RATE LIMITING ====================
 @app.route('/api/admin/login', methods=['POST'])
 def admin_login():
     if not request.is_json:
@@ -417,39 +392,88 @@ def admin_login():
     if not usuario or not contrasena:
         return jsonify({'success': False, 'error': 'Faltan usuario o contraseña'}), 400
     
-    contrasena_hash = hashlib.sha256(contrasena.encode()).hexdigest()
+    # --- Rate Limiting ---
+    ip = request.remote_addr
+    now = datetime.now()
+    login_attempts[ip] = [t for t in login_attempts[ip] if now - t < timedelta(minutes=5)]
+    if len(login_attempts[ip]) >= 5:
+        logging.warning(f"Rate limit excedido para IP {ip}")
+        return jsonify({'success': False, 'error': 'Demasiados intentos. Espera 5 minutos.'}), 429
     
     try:
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute(
-            'SELECT * FROM administradores WHERE usuario = ? AND contrasena = ?',
-            (usuario, contrasena_hash)
-        )
+        cursor.execute('SELECT * FROM administradores WHERE usuario = ?', (usuario,))
         admin = cursor.fetchone()
         conn.close()
         
         if not admin:
+            login_attempts[ip].append(now)
+            logging.warning(f"Login fallido: usuario '{usuario}' no existe desde {request.remote_addr}")
             return jsonify({'success': False, 'error': 'Credenciales inválidas'}), 401
         
-        session.permanent = True
-        session['admin_id'] = admin['id']
-        session['admin_usuario'] = admin['usuario']
-        session['admin_nombre'] = admin['nombre']
-        session['admin_rol'] = 'supervisor' if admin['usuario'] == 'supervisor' else 'admin'
+        # --- Verificar con bcrypt ---
+        try:
+            if bcrypt.checkpw(contrasena.encode(), admin['contrasena'].encode()):
+                # Login exitoso
+                login_attempts[ip] = []
+                session.permanent = True
+                session['admin_id'] = admin['id']
+                session['admin_usuario'] = admin['usuario']
+                session['admin_nombre'] = admin['nombre']
+                session['admin_rol'] = 'supervisor' if admin['usuario'] == 'supervisor' else 'admin'
+                
+                logging.info(f"Login exitoso: {usuario} desde {request.remote_addr}")
+                
+                return jsonify({
+                    'success': True,
+                    'admin': {
+                        'id': admin['id'],
+                        'usuario': admin['usuario'],
+                        'nombre': admin['nombre'],
+                        'rol': session['admin_rol']
+                    }
+                })
+        except ValueError:
+            # Si falla bcrypt, intentar con SHA256 (migración)
+            import hashlib
+            contrasena_hash_sha256 = hashlib.sha256(contrasena.encode()).hexdigest()
+            if admin['contrasena'] == contrasena_hash_sha256:
+                # Migrar a bcrypt
+                nuevo_hash = bcrypt.hashpw(contrasena.encode(), bcrypt.gensalt()).decode()
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('UPDATE administradores SET contrasena = ? WHERE id = ?', (nuevo_hash, admin['id']))
+                conn.commit()
+                conn.close()
+                
+                login_attempts[ip] = []
+                session.permanent = True
+                session['admin_id'] = admin['id']
+                session['admin_usuario'] = admin['usuario']
+                session['admin_nombre'] = admin['nombre']
+                session['admin_rol'] = 'supervisor' if admin['usuario'] == 'supervisor' else 'admin'
+                
+                logging.info(f"Login exitoso (migrado a bcrypt): {usuario} desde {request.remote_addr}")
+                
+                return jsonify({
+                    'success': True,
+                    'admin': {
+                        'id': admin['id'],
+                        'usuario': admin['usuario'],
+                        'nombre': admin['nombre'],
+                        'rol': session['admin_rol']
+                    }
+                })
         
-        return jsonify({
-            'success': True,
-            'admin': {
-                'id': admin['id'],
-                'usuario': admin['usuario'],
-                'nombre': admin['nombre'],
-                'rol': session['admin_rol']
-            }
-        })
+        # Si llegamos aquí, falló
+        login_attempts[ip].append(now)
+        logging.warning(f"Login fallido: contraseña incorrecta para {usuario} desde {request.remote_addr}")
+        return jsonify({'success': False, 'error': 'Credenciales inválidas'}), 401
+        
     except Exception as e:
+        logging.error(f"Error en login: {str(e)}")
         return jsonify({'error': str(e)}), 500
-
 
 @app.route('/api/admin/logout', methods=['POST'])
 @admin_required
@@ -457,9 +481,7 @@ def admin_logout():
     session.clear()
     return jsonify({'success': True})
 
-
 # ==================== ESTADÍSTICAS ADMIN ====================
-
 @app.route('/api/admin/estadisticas-contratistas', methods=['GET'])
 @admin_required
 def estadisticas_contratistas():
@@ -520,7 +542,6 @@ def estadisticas_contratistas():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-
 @app.route('/api/admin/consultas', methods=['GET'])
 @admin_required
 def listar_consultas():
@@ -535,15 +556,12 @@ def listar_consultas():
     except Exception as e:
         return jsonify({'error': str(e), 'consultas': []}), 500
 
-
-# ==================== ENDPOINT DEL SUPERVISOR (ARREGLADO USANDO EXCEL) ====================
-
+# ==================== SUPERVISOR DASHBOARD ====================
 @app.route('/api/supervisor/dashboard', methods=['GET'])
 @admin_required
 def supervisor_dashboard():
     import traceback
     try:
-        # Usar el DataFrame del lector para obtener estadísticas
         df = lector.df
         if df is None or df.empty:
             return jsonify({
@@ -560,12 +578,10 @@ def supervisor_dashboard():
                 'seguimiento': {'total_solpedidos': 0, 'total_posiciones': 0, 'estados': {}, 'eliminados': 0, 'activos': 0}
             })
 
-        # Estadísticas de contratos
         total_contratos = len(df)
         cedulas_unicas = df['CEDULA'].nunique() if 'CEDULA' in df.columns else 0
         promedio = round(total_contratos / cedulas_unicas, 2) if cedulas_unicas > 0 else 0
 
-        # Estados (top 10)
         if 'ESTADO' in df.columns:
             estados_counts = df['ESTADO'].value_counts().head(10)
             estados_data = {
@@ -575,14 +591,12 @@ def supervisor_dashboard():
         else:
             estados_data = {'labels': [], 'values': []}
 
-        # Años
         if 'AÑO' in df.columns:
             anios_counts = df['AÑO'].value_counts()
             por_anio = {str(k): v for k, v in anios_counts.items() if pd.notna(k)}
         else:
             por_anio = {}
 
-        # Observaciones y problemas (simplificado)
         tipos_problemas = {}
         if 'OBSERVACIÓN' in df.columns:
             for obs in df['OBSERVACIÓN'].dropna():
@@ -602,7 +616,6 @@ def supervisor_dashboard():
                 if 'CONTRASEÑA' in obs_upper or 'CLAVE' in obs_upper:
                     tipos_problemas['Con clave'] = tipos_problemas.get('Con clave', 0) + 1
 
-        # Top contratistas con más problemas (basado en observaciones)
         top_problemas = []
         if 'CEDULA' in df.columns and 'OBSERVACIÓN' in df.columns:
             grouped = df.groupby('CEDULA').agg({
@@ -614,15 +627,13 @@ def supervisor_dashboard():
             grouped = grouped[grouped['total_problemas'] > 0].sort_values('total_problemas', ascending=False).head(15)
             top_problemas = grouped.to_dict('records')
 
-        # ========== NUEVO: ESTADÍSTICAS DE SEGUIMIENTO ==========
+        # Estadísticas de seguimiento
         seguimiento_df = lector_seguimiento.df
         seguimiento_stats = {}
         if seguimiento_df is not None and not seguimiento_df.empty:
             total_solpedidos = seguimiento_df['SOLPEDIDO'].nunique()
             total_posiciones = len(seguimiento_df)
-            # Estados de solpedido
             estados_solpedido = seguimiento_df['ESTADO SOLPEDIDO'].value_counts().to_dict()
-            # Cantidad de eliminados
             eliminados = seguimiento_df[seguimiento_df['ESTADO SOLPEDIDO'].str.upper().str.contains('ELIMINADO', na=False)].shape[0]
             seguimiento_stats = {
                 'total_solpedidos': total_solpedidos,
@@ -640,7 +651,7 @@ def supervisor_dashboard():
                 'activos': 0
             }
 
-        # Datos del chat (desde SQLite)
+        # Datos del chat
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) as total FROM consultas')
@@ -661,7 +672,7 @@ def supervisor_dashboard():
             'total_consultas': total_chat,
             'usuarios_unicos': usuarios_unicos,
             'cedulas_consultadas': cedulas_consultadas,
-            'categorias': {},  # Podrías calcular categorías si quieres
+            'categorias': {},
             'ultimas_consultas': ultimas_consultas,
             'positivas': positivas,
             'negativas': negativas
@@ -678,7 +689,7 @@ def supervisor_dashboard():
             'top_problemas': top_problemas,
             'sin_movimiento': [],
             'contratistas': [],
-            'seguimiento': seguimiento_stats  # <-- NUEVO
+            'seguimiento': seguimiento_stats
         })
     except Exception as e:
         print(f"Error en supervisor_dashboard: {e}")
@@ -686,17 +697,11 @@ def supervisor_dashboard():
         return jsonify({'error': str(e)}), 500
 
 # ==================== SUBIR EXCEL SIN REDEPLOY ====================
-
 @app.route('/api/admin/upload-excel', methods=['POST'])
 @admin_required
 def upload_excel():
-    """
-    Endpoint para que el administrador pueda subir nuevos archivos Excel
-    (contratacion.xlsx o seguimiento.xlsx) y recargarlos en caliente.
-    """
     from werkzeug.utils import secure_filename
     
-    # Verificar que se haya enviado un archivo
     if 'archivo' not in request.files:
         return jsonify({'success': False, 'error': 'No se envió ningún archivo'}), 400
     
@@ -704,11 +709,9 @@ def upload_excel():
     if archivo.filename == '':
         return jsonify({'success': False, 'error': 'El archivo está vacío'}), 400
     
-    # Validar extensión
     if not archivo.filename.lower().endswith(('.xlsx', '.xls')):
         return jsonify({'success': False, 'error': 'Solo se permiten archivos Excel (.xlsx o .xls)'}), 400
     
-    # Determinar tipo de archivo por el nombre
     nombre = archivo.filename.lower()
     if 'contratacion' in nombre or 'contratista' in nombre:
         destino = os.path.join(BASE_DIR, 'database', 'contratacion.xlsx')
@@ -722,13 +725,11 @@ def upload_excel():
             'error': 'El nombre del archivo debe contener "contratacion" o "seguimiento" para identificar su tipo.'
         }), 400
     
-    # Guardar el archivo (sobrescribir el existente)
     try:
         archivo.save(destino)
     except Exception as e:
         return jsonify({'success': False, 'error': f'Error al guardar el archivo: {str(e)}'}), 500
     
-    # Recargar los datos en los lectores
     try:
         if tipo == 'contratistas':
             lector.cargar_datos()
@@ -737,6 +738,7 @@ def upload_excel():
             lector_seguimiento.cargar_datos()
             mensaje = 'Archivo de seguimiento actualizado correctamente'
         
+        logging.info(f"Excel actualizado: {tipo} por admin desde {request.remote_addr}")
         return jsonify({
             'success': True,
             'message': mensaje,
@@ -748,8 +750,14 @@ def upload_excel():
             'error': f'Error al recargar los datos: {str(e)}'
         }), 500
 
-# ==================== INICIO DEL SERVIDOR ====================
+# ==================== CABECERAS DE SEGURIDAD ====================
+@app.after_request
+def add_security_headers(response):
+    response.headers['X-Content-Type-Options'] = 'nosniff'
+    response.headers['X-Frame-Options'] = 'DENY'
+    return response
 
+# ==================== INICIO DEL SERVIDOR ====================
 if __name__ == '__main__':
     print("=" * 50)
     print("Chatbot CONTRATISTAS activo")
@@ -760,4 +768,6 @@ if __name__ == '__main__':
     print("Admin:        http://localhost:5000/admin")
     print("Supervisor:   http://localhost:5000/supervisor")
     print("=" * 50)
-    app.run(debug=True, port=5000)
+    # Usar debug solo en desarrollo local con variable de entorno
+    debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    app.run(debug=debug_mode, port=5000)
