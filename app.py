@@ -556,7 +556,8 @@ def supervisor_dashboard():
                 'por_anio': {},
                 'top_problemas': [],
                 'sin_movimiento': [],
-                'contratistas': []
+                'contratistas': [],
+                'seguimiento': {'total_solpedidos': 0, 'total_posiciones': 0, 'estados': {}, 'eliminados': 0, 'activos': 0}
             })
 
         # Estadísticas de contratos
@@ -613,6 +614,32 @@ def supervisor_dashboard():
             grouped = grouped[grouped['total_problemas'] > 0].sort_values('total_problemas', ascending=False).head(15)
             top_problemas = grouped.to_dict('records')
 
+        # ========== NUEVO: ESTADÍSTICAS DE SEGUIMIENTO ==========
+        seguimiento_df = lector_seguimiento.df
+        seguimiento_stats = {}
+        if seguimiento_df is not None and not seguimiento_df.empty:
+            total_solpedidos = seguimiento_df['SOLPEDIDO'].nunique()
+            total_posiciones = len(seguimiento_df)
+            # Estados de solpedido
+            estados_solpedido = seguimiento_df['ESTADO SOLPEDIDO'].value_counts().to_dict()
+            # Cantidad de eliminados
+            eliminados = seguimiento_df[seguimiento_df['ESTADO SOLPEDIDO'].str.upper().str.contains('ELIMINADO', na=False)].shape[0]
+            seguimiento_stats = {
+                'total_solpedidos': total_solpedidos,
+                'total_posiciones': total_posiciones,
+                'estados': estados_solpedido,
+                'eliminados': eliminados,
+                'activos': total_solpedidos - eliminados
+            }
+        else:
+            seguimiento_stats = {
+                'total_solpedidos': 0,
+                'total_posiciones': 0,
+                'estados': {},
+                'eliminados': 0,
+                'activos': 0
+            }
+
         # Datos del chat (desde SQLite)
         conn = get_connection()
         cursor = conn.cursor()
@@ -650,13 +677,76 @@ def supervisor_dashboard():
             'por_anio': por_anio,
             'top_problemas': top_problemas,
             'sin_movimiento': [],
-            'contratistas': []
+            'contratistas': [],
+            'seguimiento': seguimiento_stats  # <-- NUEVO
         })
     except Exception as e:
         print(f"Error en supervisor_dashboard: {e}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ==================== SUBIR EXCEL SIN REDEPLOY ====================
+
+@app.route('/api/admin/upload-excel', methods=['POST'])
+@admin_required
+def upload_excel():
+    """
+    Endpoint para que el administrador pueda subir nuevos archivos Excel
+    (contratacion.xlsx o seguimiento.xlsx) y recargarlos en caliente.
+    """
+    from werkzeug.utils import secure_filename
+    
+    # Verificar que se haya enviado un archivo
+    if 'archivo' not in request.files:
+        return jsonify({'success': False, 'error': 'No se envió ningún archivo'}), 400
+    
+    archivo = request.files['archivo']
+    if archivo.filename == '':
+        return jsonify({'success': False, 'error': 'El archivo está vacío'}), 400
+    
+    # Validar extensión
+    if not archivo.filename.lower().endswith(('.xlsx', '.xls')):
+        return jsonify({'success': False, 'error': 'Solo se permiten archivos Excel (.xlsx o .xls)'}), 400
+    
+    # Determinar tipo de archivo por el nombre
+    nombre = archivo.filename.lower()
+    if 'contratacion' in nombre or 'contratista' in nombre:
+        destino = os.path.join(BASE_DIR, 'database', 'contratacion.xlsx')
+        tipo = 'contratistas'
+    elif 'seguimiento' in nombre:
+        destino = os.path.join(BASE_DIR, 'database', 'seguimiento.xlsx')
+        tipo = 'seguimiento'
+    else:
+        return jsonify({
+            'success': False, 
+            'error': 'El nombre del archivo debe contener "contratacion" o "seguimiento" para identificar su tipo.'
+        }), 400
+    
+    # Guardar el archivo (sobrescribir el existente)
+    try:
+        archivo.save(destino)
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'Error al guardar el archivo: {str(e)}'}), 500
+    
+    # Recargar los datos en los lectores
+    try:
+        if tipo == 'contratistas':
+            lector.cargar_datos()
+            mensaje = 'Archivo de contratistas actualizado correctamente'
+        else:
+            lector_seguimiento.cargar_datos()
+            mensaje = 'Archivo de seguimiento actualizado correctamente'
+        
+        return jsonify({
+            'success': True,
+            'message': mensaje,
+            'tipo': tipo
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False, 
+            'error': f'Error al recargar los datos: {str(e)}'
+        }), 500
 
 # ==================== INICIO DEL SERVIDOR ====================
 

@@ -9,6 +9,57 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style>
         body { background: #f0f2f5; }
+        .upload-excel-area {
+            border: 2px dashed #d0d8e3;
+            border-radius: 16px;
+            padding: 25px;
+            text-align: center;
+            background: #fafcff;
+            transition: all 0.3s;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        .upload-excel-area.dragover {
+            border-color: var(--azul-brillante);
+            background: #eef6ff;
+        }
+        .upload-excel-area .btn-upload {
+            background: var(--azul-uniminuto);
+            color: white;
+            padding: 12px 28px;
+            border: none;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .upload-excel-area .btn-upload:hover {
+            background: var(--azul-claro);
+        }
+        .upload-excel-area .btn-upload:disabled {
+            background: #9aabbe;
+            cursor: not-allowed;
+        }
+        .upload-status-excel {
+            display: block;
+            margin-top: 12px;
+            font-size: 0.9em;
+            color: #6a7a8e;
+        }
+        .upload-status-excel.success { color: #28a745; }
+        .upload-status-excel.error { color: #dc3545; }
+        .upload-status-excel.loading { color: var(--azul-brillante); }
+        .excel-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 768px) {
+            .excel-grid {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -27,6 +78,9 @@
     <!-- HEADER -->
     <header class="header" style="display: none;" id="header-content">
         <div class="header-content">
+            <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">
+                🌙
+            </button>
             <div>
                 <h1>⚙️ Panel Admin</h1>
                 <p>Gestión del chatbot de contratación</p>
@@ -141,6 +195,40 @@
             <button class="btn btn-info" onclick="exportarCSV()">📊 Exportar CSV</button>
         </div>
 
+        <!-- NUEVA SECCIÓN: SUBIR EXCEL -->
+        <div class="card">
+            <h2>📂 Actualizar datos (Excel)</h2>
+            <p style="color: #666; margin-bottom: 15px;">Sube los archivos Excel actualizados para <strong>contratistas</strong> y <strong>seguimiento</strong>. El sistema los recargará automáticamente sin reiniciar el servidor.</p>
+            
+            <div class="excel-grid">
+                <!-- Contratistas -->
+                <div class="upload-excel-area" id="upload-area-contratistas">
+                    <div style="width: 100%; max-width: 450px; margin: 0 auto;">
+                        <p style="font-weight: 600; color: #003a70;">📋 Contratistas</p>
+                        <p style="font-size: 0.85em; color: #8a9aaa;">Sube el archivo <strong>contratacion.xlsx</strong></p>
+                    </div>
+                    <input type="file" id="excel-contratistas" accept=".xlsx" style="display:none;" onchange="subirExcel('contratistas')">
+                    <button class="btn-upload" onclick="document.getElementById('excel-contratistas').click()">
+                        📤 Seleccionar Excel
+                    </button>
+                    <span class="upload-status-excel" id="status-contratistas">Archivo seleccionado: Ninguno</span>
+                </div>
+
+                <!-- Seguimiento -->
+                <div class="upload-excel-area" id="upload-area-seguimiento">
+                    <div style="width: 100%; max-width: 450px; margin: 0 auto;">
+                        <p style="font-weight: 600; color: #003a70;">📊 Seguimiento</p>
+                        <p style="font-size: 0.85em; color: #8a9aaa;">Sube el archivo <strong>seguimiento.xlsx</strong></p>
+                    </div>
+                    <input type="file" id="excel-seguimiento" accept=".xlsx" style="display:none;" onchange="subirExcel('seguimiento')">
+                    <button class="btn-upload" onclick="document.getElementById('excel-seguimiento').click()">
+                        📤 Seleccionar Excel
+                    </button>
+                    <span class="upload-status-excel" id="status-seguimiento">Archivo seleccionado: Ninguno</span>
+                </div>
+            </div>
+        </div>
+
         <!-- TABLA DE CONSULTAS -->
         <div class="card">
             <h2>💬 Últimas consultas del chatbot</h2>
@@ -175,43 +263,34 @@
             verificarSesion();
         });
 
-            async function verificarSesion() {
-                // Verificar localStorage primero
-                const isLoggedIn = localStorage.getItem('isLoggedIn');
-                const userRole = localStorage.getItem('userRole');
-                
-                if (isLoggedIn !== 'true') {
-                    // No hay sesión, ir al login
-                    window.location.href = '/login';
-                    return;
-                }
-                
-                // Verificar con el servidor
-                try {
-                    const r = await fetch('/api/admin/estadisticas-contratistas', {
-                        credentials: 'include',
-                        cache: 'no-store'  // No usar caché
-                    });
-                    
-                    if (r.ok) {
-                        // Sesión válida
-                        stats = await r.json();
-                        mostrarDashboard();
-                    } else if (r.status === 401) {
-                        // Sesión expiró, ir al login
-                        console.log('Sesión expirada, redirigiendo al login');
-                        localStorage.clear();
-                        window.location.href = '/login';
-                    } else {
-                        // Otro error
-                        mostrarError('Error al cargar: ' + r.status);
-                    }
-                } catch (e) {
-                    console.error('Error:', e);
-                    mostrarError('Error de conexión');
-                }
+        async function verificarSesion() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            if (isLoggedIn !== 'true') {
+                window.location.href = '/login';
+                return;
             }
-
+            
+            try {
+                const r = await fetch('/api/admin/estadisticas-contratistas', {
+                    credentials: 'include',
+                    cache: 'no-store'
+                });
+                
+                if (r.ok) {
+                    stats = await r.json();
+                    mostrarDashboard();
+                } else if (r.status === 401) {
+                    console.log('Sesión expirada');
+                    localStorage.clear();
+                    window.location.href = '/login';
+                } else {
+                    mostrarError('Error al cargar: ' + r.status);
+                }
+            } catch (e) {
+                console.error('Error:', e);
+                mostrarError('Error de conexión');
+            }
+        }
 
         function mostrarDashboard() {
             document.getElementById('loading').style.display = 'none';
@@ -255,7 +334,6 @@
                 document.getElementById('resNeg').textContent = stats.satisfaccion_negativa || 0;
                 document.getElementById('resUpdate').textContent = new Date().toLocaleString('es-CO');
 
-                // Gráficas
                 if (chartCat) chartCat.destroy();
                 chartCat = new Chart(document.getElementById('chartCategorias'), {
                     type: 'doughnut',
@@ -419,6 +497,107 @@
             }
         }
 
+        // ===== SUBIR EXCEL =====
+        async function subirExcel(tipo) {
+            const input = document.getElementById(`excel-${tipo}`);
+            const statusEl = document.getElementById(`status-${tipo}`);
+            const file = input.files[0];
+            if (!file) {
+                statusEl.textContent = '❌ No seleccionaste ningún archivo';
+                statusEl.className = 'upload-status-excel error';
+                return;
+            }
+
+            // Validar extensión
+            if (!file.name.toLowerCase().endsWith('.xlsx')) {
+                statusEl.textContent = '❌ El archivo debe ser .xlsx';
+                statusEl.className = 'upload-status-excel error';
+                input.value = '';
+                return;
+            }
+
+            statusEl.textContent = '⏳ Subiendo...';
+            statusEl.className = 'upload-status-excel loading';
+
+            const formData = new FormData();
+            formData.append('archivo', file);
+
+            try {
+                const response = await fetch('/api/admin/upload-excel', {
+                    method: 'POST',
+                    credentials: 'include',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    statusEl.textContent = '✅ ' + data.message;
+                    statusEl.className = 'upload-status-excel success';
+                    // Recargar estadísticas después de subir
+                    setTimeout(() => {
+                        cargarEstadisticasSilencioso();
+                    }, 1000);
+                } else {
+                    statusEl.textContent = '❌ ' + (data.error || 'Error al subir');
+                    statusEl.className = 'upload-status-excel error';
+                }
+            } catch (error) {
+                console.error('Error subiendo Excel:', error);
+                statusEl.textContent = '❌ Error de conexión';
+                statusEl.className = 'upload-status-excel error';
+            }
+
+            input.value = '';
+        }
+
+        // Mostrar nombre del archivo seleccionado
+        document.getElementById('excel-contratistas').addEventListener('change', function() {
+            const statusEl = document.getElementById('status-contratistas');
+            if (this.files.length > 0) {
+                statusEl.textContent = '📄 Archivo seleccionado: ' + this.files[0].name;
+                statusEl.className = 'upload-status-excel';
+            } else {
+                statusEl.textContent = 'Archivo seleccionado: Ninguno';
+                statusEl.className = 'upload-status-excel';
+            }
+        });
+
+        document.getElementById('excel-seguimiento').addEventListener('change', function() {
+            const statusEl = document.getElementById('status-seguimiento');
+            if (this.files.length > 0) {
+                statusEl.textContent = '📄 Archivo seleccionado: ' + this.files[0].name;
+                statusEl.className = 'upload-status-excel';
+            } else {
+                statusEl.textContent = 'Archivo seleccionado: Ninguno';
+                statusEl.className = 'upload-status-excel';
+            }
+        });
+
+        // Drag & Drop para las áreas de subida
+        ['contratistas', 'seguimiento'].forEach(tipo => {
+            const area = document.getElementById(`upload-area-${tipo}`);
+            if (!area) return;
+            area.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                area.classList.add('dragover');
+            });
+            area.addEventListener('dragleave', () => {
+                area.classList.remove('dragover');
+            });
+            area.addEventListener('drop', (e) => {
+                e.preventDefault();
+                area.classList.remove('dragover');
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    const input = document.getElementById(`excel-${tipo}`);
+                    input.files = files;
+                    input.dispatchEvent(new Event('change'));
+                    subirExcel(tipo);
+                }
+            });
+        });
+
         async function logout() {
             try {
                 await fetch('/api/admin/logout', {method: 'POST', credentials: 'include'});
@@ -430,4 +609,25 @@
         }
     </script>
 </body>
+<script>
+    // ===== MODO OSCURO =====
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('themeToggle');
+        if (!toggle) return;
+
+        // Cargar preferencia guardada
+        const darkMode = localStorage.getItem('darkMode') === 'true';
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            toggle.textContent = '☀️';
+        }
+
+        toggle.addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            toggle.textContent = isDark ? '☀️' : '🌙';
+        });
+    });
+</script>
 </html>

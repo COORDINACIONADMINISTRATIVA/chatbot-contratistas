@@ -18,6 +18,9 @@
     <!-- HEADER -->
     <header class="header" style="display: none;" id="header-content">
         <div class="header-content">
+            <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">
+    🌙
+</button>
             <div>
                 <h1>📊 Panel Supervisora</h1>
                 <p>Análisis y métricas de contratistas</p>
@@ -47,6 +50,9 @@
             <div class="stat-card blue"><h2 id="promedioContratos">0</h2><p>📊 Promedio contratos/persona</p></div>
             <div class="stat-card purple"><h2 id="totalChat">0</h2><p>💬 Consultas al chatbot</p></div>
             <div class="stat-card orange"><h2 id="totalCedulasChat">0</h2><p>🆔 Cédulas consultadas</p></div>
+            <!-- NUEVAS TARJETAS DE SEGUIMIENTO -->
+            <div class="stat-card" style="background: linear-gradient(135deg, #17a2b8, #138496);"><h2 id="totalSolpedidos">0</h2><p>📋 Solicitudes de pago</p></div>
+            <div class="stat-card" style="background: linear-gradient(135deg, #dc3545, #c82333);"><h2 id="totalEliminados">0</h2><p>❌ Eliminados</p></div>
         </div>
 
         <!-- DISTRIBUCIÓN DE ESTADOS -->
@@ -56,6 +62,23 @@
             <div class="charts-grid">
                 <div class="chart-box"><h3>Estados (Top 10)</h3><canvas id="chartEstados"></canvas></div>
                 <div class="chart-box"><h3>Categorías del Chatbot</h3><canvas id="chartCategorias"></canvas></div>
+            </div>
+        </div>
+
+        <!-- NUEVA: DISTRIBUCIÓN DE ESTADOS DE SOLPEDIDOS -->
+        <div class="card">
+            <h2>📊 Estados de Solicitudes de Pago</h2>
+            <p style="color: #666; margin-bottom: 15px;">Distribución de estados de los solpedidos (activos, eliminados, etc.)</p>
+            <div class="charts-grid">
+                <div class="chart-box"><h3>Estados de Solpedidos</h3><canvas id="chartEstadosSolpedido"></canvas></div>
+                <div class="chart-box"><h3>Resumen de Seguimiento</h3>
+                    <div style="padding: 15px; font-size: 0.95em; line-height: 2;">
+                        <p><strong>📋 Total solpedidos:</strong> <span id="resTotalSolpedidos">0</span></p>
+                        <p><strong>✅ Activos:</strong> <span id="resActivos">0</span></p>
+                        <p><strong>❌ Eliminados:</strong> <span id="resEliminados">0</span></p>
+                        <p><strong>📊 Posiciones:</strong> <span id="resPosiciones">0</span></p>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -82,6 +105,7 @@
 
     <script>
         let chartEstados = null, chartCategorias = null, chartProblemas = null, chartAnios = null;
+        let chartEstadosSolpedido = null;
 
         window.addEventListener('DOMContentLoaded', function() {
             verificarSesion();
@@ -130,6 +154,15 @@
             document.getElementById('totalChat').textContent = data.chat?.total_consultas || 0;
             document.getElementById('totalCedulasChat').textContent = data.chat?.cedulas_consultadas || 0;
 
+            // NUEVO: estadísticas de seguimiento
+            const seg = data.seguimiento || {};
+            document.getElementById('totalSolpedidos').textContent = seg.total_solpedidos || 0;
+            document.getElementById('totalEliminados').textContent = seg.eliminados || 0;
+            document.getElementById('resTotalSolpedidos').textContent = seg.total_solpedidos || 0;
+            document.getElementById('resActivos').textContent = seg.activos || 0;
+            document.getElementById('resEliminados').textContent = seg.eliminados || 0;
+            document.getElementById('resPosiciones').textContent = seg.total_posiciones || 0;
+
             // Gráfica de estados
             if (chartEstados) chartEstados.destroy();
             const estadosLabels = data.estados?.labels?.slice(0, 10) || [];
@@ -162,6 +195,22 @@
                     datasets: [{
                         data: [cat.documentos || 0, cat.portal || 0, cat.rut || 0, cat.pagos || 0, cat.problemas || 0, cat.llenar || 0],
                         backgroundColor: ['#003a70', '#28a745', '#fd7e14', '#e83e8c', '#dc3545', '#17a2b8']
+                    }]
+                },
+                options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
+            });
+
+            // NUEVO: Gráfica de estados de solpedidos
+            if (chartEstadosSolpedido) chartEstadosSolpedido.destroy();
+            const estadosSolpedidoLabels = Object.keys(seg.estados || {});
+            const estadosSolpedidoValues = Object.values(seg.estados || {});
+            chartEstadosSolpedido = new Chart(document.getElementById('chartEstadosSolpedido'), {
+                type: 'pie',
+                data: {
+                    labels: estadosSolpedidoLabels.map(l => l.length > 25 ? l.substring(0, 25) + '...' : l),
+                    datasets: [{
+                        data: estadosSolpedidoValues,
+                        backgroundColor: ['#28a745', '#fd7e14', '#dc3545', '#17a2b8', '#6f42c1', '#ffc107', '#003a70']
                     }]
                 },
                 options: {responsive: true, maintainAspectRatio: false, plugins: {legend: {position: 'bottom'}}}
@@ -229,4 +278,25 @@
         }
     </script>
 </body>
+<script>
+    // ===== MODO OSCURO =====
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('themeToggle');
+        if (!toggle) return;
+
+        // Cargar preferencia guardada
+        const darkMode = localStorage.getItem('darkMode') === 'true';
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            toggle.textContent = '☀️';
+        }
+
+        toggle.addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            toggle.textContent = isDark ? '☀️' : '🌙';
+        });
+    });
+</script>
 </html>

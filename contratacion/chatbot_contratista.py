@@ -22,6 +22,69 @@ def _obtener_clasificador():
         _clasificador_semantico.cargar_modelo()
     return _clasificador_semantico
 
+def obtener_info_completa(cedula):
+    """
+    Devuelve un dict con la información combinada de contratistas y seguimiento.
+    Similar a lo que hace /api/mi-proceso pero en formato texto para el chat.
+    """
+    from .lector import lector
+    registros = lector.buscar_por_cedula(cedula)
+    seguimiento = lector_seguimiento.buscar_por_cedula(cedula)
+    
+    info = {
+        'nombre': None,
+        'cedula': cedula,
+        'estado': None,
+        'observacion': None,
+        'año': None,
+        'pagos': []  # lista de dicts con info de pagos
+    }
+    
+    # Si hay registros en contratistas
+    if registros:
+        r = registros[0]  # tomamos el primero
+        info['nombre'] = r.get('NOMBRE DE CONTRATISTA', 'Sin nombre')
+        info['cedula'] = r.get('CEDULA', cedula)
+        info['año'] = str(r.get('AÑO', ''))
+        estado_original = r.get('ESTADO', 'Sin estado')
+        info['estado'] = traducir_estado(estado_original) or f"📋 {estado_original}"
+        obs_original = r.get('OBSERVACIÓN', '')
+        info['observacion'] = traducir_observacion(obs_original) or (f"📋 {obs_original}" if obs_original else "📋 Sin información adicional")
+    
+    # Si hay seguimiento, procesar pagos
+    if seguimiento:
+        solpedidos = {}
+        for s in seguimiento:
+            solpedido = str(s.get('SOLPEDIDO', 'Desconocido'))
+            if solpedido not in solpedidos:
+                solpedidos[solpedido] = {
+                    'solpedido': solpedido,
+                    'nombre': s.get('NOMBRE DEL PROVEEDOR', info['nombre'] or 'Sin nombre'),
+                    'cedula': s.get('CEDULA', cedula),
+                    'pagos': []
+                }
+            info_pos = lector_seguimiento.extraer_info_pos(s.get('TEXTO DE POS', ''))
+            estado = s.get('ESTADO SOLPEDIDO', 'Sin estado')
+            solpedidos[solpedido]['pagos'].append({
+                'pos': str(s.get('POS', '')),
+                'estado': estado,
+                'observacion': s.get('OBSERVACIÓN SOLPEDIDO', 'Sin observaciones'),
+                'tipo_pago': info_pos.get('tipo_pago', 'Pago'),
+                'mes': info_pos.get('mes', ''),
+                'objeto': info_pos.get('objeto', ''),
+                'valor': s.get('VALOR TOTAL', 0),
+                'es_eliminado': 'Eliminado' in str(estado) or 'ELIMINADO' in str(estado).upper()
+            })
+        
+        # Guardar pagos en la info
+        for solpedido, data_s in solpedidos.items():
+            info['pagos'].append({
+                'solpedido': solpedido,
+                'pagos': data_s['pagos']
+            })
+    
+    return info
+
 # Links importantes
 URL_PORTAL = "https://proveedores.uniminuto.edu"
 URL_INSTRUCTIVO = "https://uniminuto.edu/instructivo-proveedores"

@@ -53,6 +53,9 @@
     <!-- HEADER -->
     <header class="header">
         <div class="header-content">
+            <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">
+    🌙
+</button>
             <div class="header-left">
                 <img src="/static/images/logo2.png" alt="UNIMINUTO" class="header-logo">
                 <div>
@@ -218,4 +221,25 @@ Aquí puedes preguntar sobre el proceso de contratación en general. Selecciona 
         }
     </script>
 </body>
+<script>
+    // ===== MODO OSCURO =====
+    document.addEventListener('DOMContentLoaded', function() {
+        const toggle = document.getElementById('themeToggle');
+        if (!toggle) return;
+
+        // Cargar preferencia guardada
+        const darkMode = localStorage.getItem('darkMode') === 'true';
+        if (darkMode) {
+            document.body.classList.add('dark-mode');
+            toggle.textContent = '☀️';
+        }
+
+        toggle.addEventListener('click', function() {
+            document.body.classList.toggle('dark-mode');
+            const isDark = document.body.classList.contains('dark-mode');
+            localStorage.setItem('darkMode', isDark);
+            toggle.textContent = isDark ? '☀️' : '🌙';
+        });
+    });
+</script>
 </html>
