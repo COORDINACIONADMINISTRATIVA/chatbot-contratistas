@@ -9,23 +9,110 @@ import uuid
 import hashlib
 import time
 import logging
+import re
 from datetime import datetime, timedelta
 from functools import wraps
 from collections import defaultdict
 from flask import Flask, request, jsonify, session, send_from_directory
 from flask_cors import CORS
 import pandas as pd
-import bcrypt  # ✅ IMPORTACIÓN GLOBAL (correcta)
+import bcrypt
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 from contratacion.lector_seguimiento import lector_seguimiento
 
-# ==================== CONFIGURACIÓN DE LOGGING ====================
+from dotenv import load_dotenv
+
+import re
+from datetime import datetime
+
+def limpiar_fecha(fecha):
+    """
+    Convierte una fecha en formato '2026-08-01 00:00:00' a '01/08/2026'
+    """
+    if not fecha:
+        return "01/08/2026"  # Fecha por defecto
+    
+    # Si es string, intentar convertir
+    if isinstance(fecha, str):
+        # Intentar extraer solo la parte de la fecha (YYYY-MM-DD)
+        match = re.search(r'(\d{4})-(\d{2})-(\d{2})', fecha)
+        if match:
+            anio, mes, dia = match.groups()
+            return f"{dia}/{mes}/{anio}"
+        
+        # Si ya tiene formato DD/MM/AAAA, devolverla igual
+        if re.search(r'\d{2}/\d{2}/\d{4}', fecha):
+            return fecha
+    
+    # Si es datetime o timestamp, convertirlo
+    try:
+        if isinstance(fecha, datetime):
+            return fecha.strftime('%d/%m/%Y')
+        # Si es pandas Timestamp
+        if hasattr(fecha, 'strftime'):
+            return fecha.strftime('%d/%m/%Y')
+    except:
+        pass
+    
+    return "01/08/2026"  # Fecha por defecto
+
+
+def limpiar_objeto(objeto):
+    """
+    Limpia el objeto del contrato:
+    - Elimina saltos de línea extraños
+    - Elimina espacios dobles
+    - Formatea el texto legiblemente
+    """
+    if not objeto:
+        return "Prestación de servicios profesionales como experto disciplinar."
+    
+    # Convertir a string
+    texto = str(objeto)
+    
+    # Reemplazar saltos de línea por un espacio
+    texto = texto.replace('\n', ' ').replace('\r', ' ')
+    
+    # Eliminar múltiples espacios
+    texto = re.sub(r'\s+', ' ', texto)
+    
+    # Eliminar espacios al inicio y final
+    texto = texto.strip()
+    
+    # Si está vacío después de limpiar, devolver texto por defecto
+    if not texto:
+        return "Prestación de servicios profesionales como experto disciplinar."
+    
+    return texto
+
+
+# ==================== CARGAR .ENV ====================
+if os.path.exists('hola.env'):
+    load_dotenv('hola.env')
+    print("✅ Archivo hola.env cargado correctamente")
+else:
+    load_dotenv()
+    print("⚠️ No se encontró hola.env, intentando con .env")
+
+# ==================== CONFIGURACIÓN SMTP ====================
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.office365.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SMTP_USER = os.environ.get('SMTP_USER', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+SMTP_FROM = os.environ.get('SMTP_FROM', SMTP_USER)
+
+print(f"📧 SMTP configurado con: {SMTP_USER} - Host: {SMTP_HOST}")
+
+# ==================== LOGGING ====================
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
-# ==================== IMPORTS AL INICIO ====================
+# ==================== IMPORTS DEL PROYECTO ====================
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from database.db import get_connection, init_db
@@ -33,7 +120,43 @@ from contratacion.chatbot_contratista import responder_contratista
 from contratacion.lector import lector
 from contratacion.intérprete import traducir_observacion, traducir_estado
 
-# ==================== CONFIGURACIÓN ====================
+# ==================== FUNCIÓN ENVIAR CORREO ====================
+def enviar_correo(destinatario, asunto, cuerpo):
+    """
+    Envía un correo usando SMTP.
+    Retorna (exito: bool, mensaje: str)
+    """
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print("⚠️ Credenciales SMTP no configuradas")
+        return False, "Credenciales SMTP no configuradas"
+    
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SMTP_FROM
+        msg['To'] = destinatario
+        msg['Subject'] = asunto
+        msg.attach(MIMEText(cuerpo, 'html' if '<' in cuerpo else 'plain', 'utf-8'))
+
+        print(f"📤 Conectando a {SMTP_HOST}:{SMTP_PORT}...")
+        
+        server = smtplib.SMTP(SMTP_HOST, SMTP_PORT)
+        server.connect(SMTP_HOST, SMTP_PORT)
+        server.starttls()
+        server.login(SMTP_USER, SMTP_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        
+        print(f"✅ Correo enviado a {destinatario}")
+        return True, "Correo enviado correctamente"
+        
+    except smtplib.SMTPAuthenticationError as e:
+        print(f"❌ Error de autenticación: {e}")
+        return False, f"Error de autenticación: Verifica usuario/contraseña (error: {str(e)})"
+    except Exception as e:
+        print(f"❌ Error enviando correo: {e}")
+        return False, str(e)
+
+# ==================== CONFIGURACIÓN DE FLASK ====================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_DIR = os.path.join(BASE_DIR, 'frontend')
 STATIC_DIR = os.path.join(FRONTEND_DIR, 'static')
@@ -61,8 +184,17 @@ print(f"CSS existe: {os.path.exists(os.path.join(STATIC_DIR, 'css', 'estilos.css
 # Inicializar base de datos
 init_db()
 
-# ==================== RATE LIMITING (LOGIN) ====================
+# ==================== RATE LIMITING ====================
 login_attempts = defaultdict(list)
+
+# ==================== DECORADOR ADMIN_REQUIRED ====================
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'admin_id' not in session:
+            return jsonify({'error': 'No autorizado'}), 401
+        return f(*args, **kwargs)
+    return decorated
 
 # ==================== RUTAS DE PÁGINAS ====================
 @app.route('/')
@@ -88,6 +220,372 @@ def admin():
 @app.route('/supervisor')
 def supervisor_page():
     return send_from_directory(FRONTEND_DIR, 'supervisor.html')
+
+# ==================== PRUEBA DE CORREO ====================
+@app.route('/api/admin/test-correo', methods=['POST'])
+@admin_required
+def test_correo():
+    """Endpoint para probar el envío de correos"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'Datos inválidos'}), 400
+    
+    destinatario = data.get('destinatario', '').strip()
+    if not destinatario:
+        return jsonify({'success': False, 'error': 'Falta destinatario'}), 400
+    
+    asunto = "🧪 Prueba de correo - Chatbot UNIMINUTO"
+    cuerpo = f"""
+    <h2>¡Correo de prueba exitoso! ✅</h2>
+    <p>Este es un correo de prueba enviado desde el sistema de contratación de UNIMINUTO Virtual.</p>
+    <p>Si estás viendo esto, el sistema de correos está funcionando correctamente.</p>
+    <hr>
+    <p style="color: #666; font-size: 0.9em;">Este es un mensaje automático, por favor no responder.</p>
+    """
+    
+    exito, mensaje = enviar_correo(destinatario, asunto, cuerpo)
+    
+    if exito:
+        return jsonify({
+            'success': True,
+            'message': f'Correo enviado a {destinatario}',
+            'detalle': mensaje
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'error': mensaje
+        }), 500
+
+# ==================== ENVÍO DE CORREOS (COPIAR Y PEGAR - CON FILTRO) ====================
+@app.route('/api/admin/enviar-correos-pegados', methods=['POST'])
+@admin_required
+def enviar_correos_pegados():
+    """Endpoint para enviar correos con filtro (cédula + correo)"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'Datos inválidos'}), 400
+    
+    asunto = data.get('asunto', '').strip()
+    destinatarios = data.get('destinatarios', [])
+    
+    if not asunto:
+        return jsonify({'success': False, 'error': 'Falta el asunto'}), 400
+    
+    if not destinatarios or not isinstance(destinatarios, list):
+        return jsonify({'success': False, 'error': 'Lista de destinatarios vacía'}), 400
+    
+    if len(destinatarios) > 500:
+        return jsonify({'success': False, 'error': 'Demasiados destinatarios (máximo 500)'}), 400
+    
+    # ==================== PLANTILLAS ====================
+    PLANTILLA_CON_REGISTRO = """
+    Buen día, {nombre}
+
+    Solicitamos su colaboración con el registro en el PORTAL DE PROVEEDORES DE UNIMINUTO, a continuación, compartimos el enlace para efectuar su inscripción como proveedor de UNIMINUTO (ver video adjunto e instructivo)
+
+    👉 Enlace portal de proveedores: https://proveedores.uniminuto.edu
+
+    Es importante tener en cuenta lo siguiente al momento del registro:
+    - Seleccionar la Sede de Operaciones: Rectoría UNIMINUTO Virtual.
+    - En la opción Bien o Servicio, seleccionar Servicio y posteriormente la categoría correspondiente.
+    - En el apartado 24 de su RUT se indica el tipo de contribuyente el cual debe coincidir con el registro en el portal.
+    - Régimen: Persona Natural → Simplificado, Persona Jurídica → Común.
+    - Tratamiento: Señor(a) → si no es colaborador; Empleado(a) → solo si es colaborador UNIMINUTO.
+
+    Así mismo, agradecemos enviar la siguiente documentación en formato PDF y sin contraseñas para proceder con los trámites internos requeridos para el proceso de contratación por prestación de servicios solicitado por UNIMINUTO VIRTUAL:
+
+    Documentos mínimos requeridos:
+    - Cédula de ciudadanía.
+    - Certificación bancaria con fecha de expedición no mayor a 30 días.
+    - Cotización firmada y en formato PDF.
+    - RUT actualizado con fecha de expedición no mayor a 30 días. La actividad económica registrada debe corresponder a la labor a desarrollar; en caso de no contar con una actividad específica, se sugiere utilizar el código 8560 – Actividades de apoyo a la educación.
+    - Formato Excel adjunto debidamente diligenciado.
+    - Certificación de afiliación a ARL activa como trabajador independiente.
+    - Examen médico ocupacional (máxima vigencia de 3 años).
+
+    ✨IMPORTANTE:
+    🧮 Recuerde que el NO REGISTRO EFECTIVO en el portal de proveedores o la falta de alguno de los documentos anteriormente solicitados generará retrazos y afectaciones en el proceso de contratación el cual se notificará al supervisor del proyecto.
+    🔎 Al momento de la recepción de este correo debe realizar su registro y envio de documentos de manera inmediata.
+
+    ✨OBJETO DEL CONTRATO:
+    {objeto}
+
+    FECHA DE INICIO: {fecha_inicio}
+    FECHA FIN: {fecha_fin}
+
+    Quedo atenta a sus comentarios.
+
+    Cordialmente,
+    """
+
+    PLANTILLA_SIN_REGISTRO = """
+    Buen día, {nombre}
+
+    Solicitamos su colaboración envio de la siguiente documentación en formato PDF y sin contraseñas para proceder con los tramites internos requeridos para el proceso de contratación por prestación de servicios solicitado por UNIMINUTO VIRTUAL:
+
+    Documentos mínimos requeridos:
+    - Cédula de ciudadanía.
+    - Certificación bancaria con fecha de expedición no mayor a 30 días.
+    - Cotización firmada y en formato PDF.
+    - RUT actualizado con fecha de expedición no mayor a 30 días. La actividad económica registrada debe corresponder a la labor a desarrollar; en caso de no contar con una actividad específica, se sugiere utilizar el código 8560 – Actividades de apoyo a la educación.
+    - Formato Excel adjunto debidamente diligenciado.
+    - Certificación de afiliación a ARL activa como trabajador independiente.
+    - Examen médico ocupacional (máxima vigencia de 3 años).
+
+    ✨IMPORTANTE:
+    🧮 Recuerde que la falta de alguno de los documentos anteriormente solicitados generará retrazos y afectaciones en el proceso de contratación el cual se notificará al supervisor del proyecto.
+
+    ✨OBJETO DEL CONTRATO:
+    {objeto}
+
+    FECHA DE INICIO: {fecha_inicio}
+    FECHA FIN: {fecha_fin}
+
+    Quedo atenta a sus comentarios.
+
+    Cordialmente,
+    """
+
+    exitosos = 0
+    fallidos = 0
+    errores = []
+    con_registro = 0
+    sin_registro = 0
+    
+    for item in destinatarios:
+        cedula = item.get('cedula', '').strip()
+        correo = item.get('correo', '').strip()
+        
+        if not cedula or not correo or '@' not in correo:
+            fallidos += 1
+            errores.append(f"Datos inválidos: {item}")
+            continue
+        
+        # ===== LIMPIAR CÉDULA =====
+        # Quitar comillas, espacios, puntos, etc.
+        cedula_limpia = re.sub(r'["\'\.\s,;]', '', str(cedula))
+        # Si tiene formato 1.234.567, quitar puntos
+        if re.search(r'\d{1,3}\.\d{3}\.\d{3}', cedula_limpia):
+            cedula_limpia = re.sub(r'\.', '', cedula_limpia)
+        # Quitar texto después de números (ej: "1030543373 de Bogotá")
+        if re.search(r'\d{6,12}\s+[a-zA-Z]', cedula_limpia):
+            cedula_limpia = re.sub(r'\s+[a-zA-Z].*$', '', cedula_limpia)
+        
+        # Verificar que sea un número válido
+        if not re.match(r'^\d{6,12}$', cedula_limpia):
+            fallidos += 1
+            errores.append(f"Cédula inválida: {cedula} (limpia: {cedula_limpia})")
+            continue
+        
+        # ===== BUSCAR EN EXCEL =====
+        registros = lector.buscar_por_cedula(cedula_limpia)
+        tiene_contrato = registros is not None and len(registros) > 0
+        
+        # ===== OBTENER DATOS =====
+        nombre = "Contratista"
+        fecha_inicio = "01/08/2026"
+        fecha_fin = "31/12/2026"
+        objeto = "Prestación de servicios profesionales como experto disciplinar para la construcción de documentos de obtención de registro calificado."
+        
+        if tiene_contrato:
+            info = lector.obtener_info_contratista(registros[0])
+            nombre = info.get('nombre', nombre)
+            if info.get('fecha_inicio'):
+                fecha_inicio = info.get('fecha_inicio')
+            if info.get('fecha_fin'):
+                fecha_fin = info.get('fecha_fin')
+            if info.get('objeto'):
+                objeto = info.get('objeto')
+        
+        # ===== ELEGIR PLANTILLA =====
+        if tiene_contrato:
+            plantilla = PLANTILLA_SIN_REGISTRO
+            sin_registro += 1
+        else:
+            plantilla = PLANTILLA_CON_REGISTRO
+            con_registro += 1
+        
+        # ===== PERSONALIZAR Y ENVIAR =====
+        cuerpo = plantilla.format(
+            nombre=nombre,
+            objeto=objeto,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin
+        )
+        
+        exito, mensaje = enviar_correo(correo, asunto, cuerpo)
+        if exito:
+            exitosos += 1
+        else:
+            fallidos += 1
+            errores.append(f"{correo}: {mensaje}")
+    
+    logging.info(f"Correos enviados: {exitosos} exitosos, {fallidos} fallidos | Con registro: {con_registro}, Sin registro: {sin_registro}")
+    
+    return jsonify({
+        'success': True,
+        'exitosos': exitosos,
+        'fallidos': fallidos,
+        'con_registro': con_registro,
+        'sin_registro': sin_registro,
+        'errores': errores[:10]
+    })
+
+
+# ==================== ENVÍO DE CORREOS SIN FILTRO ====================
+@app.route('/api/admin/enviar-correos-sin-filtro', methods=['POST'])
+@admin_required
+def enviar_correos_sin_filtro():
+    """Endpoint para enviar correos sin filtro (solo correos)"""
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'Datos inválidos'}), 400
+    
+    asunto = data.get('asunto', '').strip()
+    destinatarios = data.get('destinatarios', [])
+    plantilla = data.get('plantilla', 'con_registro')
+    
+    if not asunto:
+        return jsonify({'success': False, 'error': 'Falta el asunto'}), 400
+    
+    if not destinatarios or not isinstance(destinatarios, list):
+        return jsonify({'success': False, 'error': 'Lista de destinatarios vacía'}), 400
+    
+    if len(destinatarios) > 500:
+        return jsonify({'success': False, 'error': 'Demasiados destinatarios (máximo 500)'}), 400
+    
+    # Plantillas (mismo texto que arriba, pero las reutilizamos)
+    PLANTILLA_CON_REGISTRO = """
+    Buen día,
+
+    Solicitamos su colaboración con el registro en el PORTAL DE PROVEEDORES DE UNIMINUTO, a continuación, compartimos el enlace para efectuar su inscripción como proveedor de UNIMINUTO (ver video adjunto e instructivo)
+
+    👉 Enlace portal de proveedores: https://proveedores.uniminuto.edu
+
+    🛎️ Video tutorial
+    Proceso para Registro en Plataforma-20260223_170351-Grabación de la reunión.mp4
+
+    ✍️ Instructivo Portal Proveedores icono de pdf Instructivo Portal Proveedores _ Usuarios Externos.pdf
+
+    Es importante tener en cuenta lo siguiente al momento del registro:
+
+    Seleccionar la Sede de Operaciones: Rectoría UNIMINUTO Virtual.
+    En la opción Bien o Servicio, seleccionar Servicio y posteriormente la categoría correspondiente.
+
+    Tenga en cuenta que en el apartado 24 de su RUT se indica el tipo de contribuyente el cual debe coincidir con el registro en el portal.
+
+    Seleccione de la siguiente manera el régimen: en caso de ser persona natural seleccione "Simplificado", si es persona juridica seleccione "Común"
+
+    En el apartado de tratamiento debe seleccionar "Señor(a)", solamente en caso de que usted sea colaborador de UNIMINUTO seleccione "Empleado(a)".
+
+    Así mismo, agradecemos enviar la siguiente documentación en formato PDF y sin contraseñas para proceder con los tramites internos requeridos para el proceso de contratación por prestación de servicios solicitado por UNIMINUTO VIRTUAL:
+
+    Documentos mínimos requeridos:
+
+    Cédula de ciudadanía.
+    Certificación bancaria con fecha de expedición no mayor a 30 días.
+    Cotización firmada y en formato PDF icono de docx Ejemplo Cotización.docx
+    RUT actualizado con fecha de expedición no mayor a 30 días. La actividad económica registrada debe corresponder a la labor a desarrollar; en caso de no contar con una actividad específica, se sugiere utilizar el código 8560 – Actividades de apoyo a la educación.
+
+    Formato Excel adjunto debidamente diligenciado icono de xlsm Ingreso Independientes.xlsm
+    Certificación de afiliación a ARL activa como trabajador independiente.
+    Examen médico ocupacional (máxima vigencia de 3 años).
+
+    ✨IMPORTANTE:
+
+    ✍️Si no tiene la actividad correspondiente en el RUT para la labor que va a realizar, comparto el instructivo con los pasos para que pueda actualizar
+
+    Paso a paso para actualizar tu RUT.pdf
+    🧮 Recuerde que el NO REGISTRO EFECTIVO en el portal de proveedores o la falta de alguno de los documentos anteriormente solicitados generará retrazos y afectaciones en el proceso de contratación el cual se notificará al supervisor del proyecto.
+
+    🔎 Al momento de la recepción de este correo debe realizar su registro y envio de documentos de manera inmediata.
+
+    ✨OBJETO DEL CONTRATO:
+    {objeto}
+
+    FECHA DE INICIO: {fecha_inicio}
+    FECHA FIN: {fecha_fin}
+
+    Quedo atenta a sus comentarios.
+
+    Cordialmente,
+    """
+
+    PLANTILLA_SIN_REGISTRO = """
+    Buen día,
+
+    Así mismo, agradecemos enviar la siguiente documentación en formato PDF y sin contraseñas para proceder con los tramites internos requeridos para el proceso de contratación por prestación de servicios solicitado por UNIMINUTO VIRTUAL:
+
+    Documentos mínimos requeridos:
+
+    Cédula de ciudadanía.
+    Certificación bancaria con fecha de expedición no mayor a 30 días.
+    Cotización firmada y en formato PDF icono de docx Ejemplo Cotización.docx
+    RUT actualizado con fecha de expedición no mayor a 30 días. La actividad económica registrada debe corresponder a la labor a desarrollar; en caso de no contar con una actividad específica, se sugiere utilizar el código 8560 – Actividades de apoyo a la educación.
+
+    Formato Excel adjunto debidamente diligenciado icono de xlsm Ingreso Independientes.xlsm
+    Certificación de afiliación a ARL activa como trabajador independiente.
+    Examen médico ocupacional (máxima vigencia de 3 años).
+
+    ✨IMPORTANTE:
+
+    ✍️Si no tiene la actividad correspondiente en el RUT para la labor que va a realizar, comparto el instructivo con los pasos para que pueda actualizar
+
+    Paso a paso para actualizar tu RUT.pdf
+    🧮 Recuerde que la falta de alguno de los documentos anteriormente solicitados generará retrazos y afectaciones en el proceso de contratación el cual se notificará al supervisor del proyecto.
+
+    ✨OBJETO DEL CONTRATO:
+    {objeto}
+
+    FECHA DE INICIO: {fecha_inicio}
+    FECHA FIN: {fecha_fin}
+
+    Quedo atenta a sus comentarios.
+
+    Cordialmente,
+    """
+    
+    plantilla_cuerpo = PLANTILLA_CON_REGISTRO if plantilla == 'con_registro' else PLANTILLA_SIN_REGISTRO
+    
+    exitosos = 0
+    fallidos = 0
+    errores = []
+    
+    for correo in destinatarios:
+        if not correo or '@' not in correo:
+            fallidos += 1
+            errores.append(f"Correo inválido: {correo}")
+            continue
+        
+        # Datos por defecto para modo sin filtro
+        nombre = "Contratista"
+        objeto = "Prestación de servicios profesionales como experto disciplinar para la construcción de documentos de obtención de registro calificado."
+        fecha_inicio = "01/08/2026"
+        fecha_fin = "31/12/2026"
+        
+        cuerpo = plantilla_cuerpo.format(
+            nombre=nombre,
+            objeto=objeto,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin
+        )
+        
+        exito, mensaje = enviar_correo(correo, asunto, cuerpo)
+        if exito:
+            exitosos += 1
+        else:
+            fallidos += 1
+            errores.append(f"{correo}: {mensaje}")
+    
+    logging.info(f"Correos sin filtro enviados: {exitosos} exitosos, {fallidos} fallidos")
+    
+    return jsonify({
+        'success': True,
+        'exitosos': exitosos,
+        'fallidos': fallidos,
+        'errores': errores[:10]
+    })
 
 # ==================== API CHAT ====================
 @app.route('/api/chat', methods=['POST'])
@@ -366,15 +864,6 @@ def validar_rut():
             'success': False,
             'error': f'Error al procesar el RUT: {str(e)}'
         }), 500
-
-# ==================== ADMINISTRACIÓN ====================
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if 'admin_id' not in session:
-            return jsonify({'error': 'No autorizado'}), 401
-        return f(*args, **kwargs)
-    return decorated
 
 # ==================== LOGIN CON BCRYPT Y RATE LIMITING ====================
 @app.route('/api/admin/login', methods=['POST'])
@@ -768,6 +1257,5 @@ if __name__ == '__main__':
     print("Admin:        http://localhost:5000/admin")
     print("Supervisor:   http://localhost:5000/supervisor")
     print("=" * 50)
-    # Usar debug solo en desarrollo local con variable de entorno
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     app.run(debug=debug_mode, port=5000)

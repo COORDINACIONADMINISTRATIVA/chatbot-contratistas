@@ -36,7 +36,7 @@ class LectorContratistas:
                 col_upper = col.upper()
                 if 'AÑO' in col_upper or 'ANO' in col_upper:
                     self.columnas['año'] = col
-                elif 'NOMBRE' in col_upper:
+                elif 'NOMBRE' in col_upper and 'CONTRATISTA' in col_upper:
                     self.columnas['nombre'] = col
                 elif 'DOCUMENTO' in col_upper or 'IDENTIDAD' in col_upper or 'CÉDULA' in col_upper or 'CEDULA' in col_upper:
                     self.columnas['documento'] = col
@@ -44,6 +44,12 @@ class LectorContratistas:
                     self.columnas['estado'] = col
                 elif 'OBSERV' in col_upper:
                     self.columnas['observacion'] = col
+                elif 'FECHA_INICIO' in col_upper:
+                    self.columnas['fecha_inicio'] = col
+                elif 'FECHA_FIN' in col_upper:
+                    self.columnas['fecha_fin'] = col
+                elif 'OBJETO' in col_upper and 'CONTRATO' in col_upper:
+                    self.columnas['objeto'] = col
             
             print(f"📋 Columnas mapeadas: {self.columnas}")
             
@@ -130,6 +136,9 @@ class LectorContratistas:
             'estado': 'Sin estado',
             'observacion': 'Sin observaciones',
             'año': '',
+            'fecha_inicio': '',
+            'fecha_fin': '',
+            'objeto': ''
         }
         
         try:
@@ -158,6 +167,23 @@ class LectorContratistas:
                 col = self.columnas['año']
                 if col in registro:
                     info['año'] = str(registro.get(col, ''))
+            
+            # ===== NUEVO: EXTRAER FECHAS Y OBJETO =====
+            if 'fecha_inicio' in self.columnas:
+                col = self.columnas['fecha_inicio']
+                if col in registro and pd.notna(registro.get(col)):
+                    info['fecha_inicio'] = str(registro.get(col, ''))
+            
+            if 'fecha_fin' in self.columnas:
+                col = self.columnas['fecha_fin']
+                if col in registro and pd.notna(registro.get(col)):
+                    info['fecha_fin'] = str(registro.get(col, ''))
+            
+            if 'objeto' in self.columnas:
+                col = self.columnas['objeto']
+                if col in registro and pd.notna(registro.get(col)):
+                    info['objeto'] = str(registro.get(col, ''))
+                    
         except Exception as e:
             print(f"Error en obtener_info: {e}")
         

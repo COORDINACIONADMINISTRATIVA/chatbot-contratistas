@@ -55,6 +55,112 @@
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
+        .correo-textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e8f2;
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 0.95em;
+            resize: vertical;
+            min-height: 150px;
+        }
+        .correo-textarea:focus {
+            border-color: var(--azul-uniminuto);
+            outline: none;
+        }
+        .btn-correo {
+            padding: 14px 40px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn-correo-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-correo-success:hover {
+            background: #218838;
+        }
+        .btn-correo-info {
+            background: #17a2b8;
+            color: white;
+        }
+        .btn-correo-info:hover {
+            background: #138496;
+        }
+        .btn-correo-secondary {
+            background: #6c757d;
+            color: white;
+        }
+        .btn-correo-secondary:hover {
+            background: #5a6268;
+        }
+        .resultado-correos {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 12px;
+            display: none;
+        }
+        .resultado-correos.exito {
+            display: block;
+            background: #f0f7ff;
+            border-left: 4px solid #28a745;
+        }
+        .resultado-correos.error {
+            display: block;
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .resultado-correos h4 {
+            margin-bottom: 10px;
+        }
+        .resultado-correos p {
+            margin: 5px 0;
+        }
+        .tab-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            flex: 1;
+        }
+        .tab-btn.active {
+            background: #003087;
+            color: white;
+        }
+        .tab-btn.inactive {
+            background: #6c757d;
+            color: white;
+        }
+        .info-box {
+            background: #e3f0ff;
+            border-left: 4px solid #00A3E0;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .info-box strong {
+            color: #003a70;
+        }
+        .info-box p {
+            margin: 5px 0 0 0;
+            font-size: 0.95em;
+            color: #1e2a41;
+        }
+        .contador-lineas {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.85em;
+            color: #8a9aaa;
+        }
         @media (max-width: 768px) {
             .excel-grid {
                 grid-template-columns: 1fr;
@@ -195,7 +301,7 @@
             <button class="btn btn-info" onclick="exportarCSV()">📊 Exportar CSV</button>
         </div>
 
-        <!-- NUEVA SECCIÓN: SUBIR EXCEL -->
+        <!-- SECCIÓN: SUBIR EXCEL -->
         <div class="card">
             <h2>📂 Actualizar datos (Excel)</h2>
             <p style="color: #666; margin-bottom: 15px;">Sube los archivos Excel actualizados para <strong>contratistas</strong> y <strong>seguimiento</strong>. El sistema los recargará automáticamente sin reiniciar el servidor.</p>
@@ -226,6 +332,126 @@
                     </button>
                     <span class="upload-status-excel" id="status-seguimiento">Archivo seleccionado: Ninguno</span>
                 </div>
+            </div>
+        </div>
+
+        <!-- ==================== SECCIÓN: ENVÍO DE CORREOS ==================== -->
+        <div class="card">
+            <h2>📧 Envío de correos a contratistas</h2>
+            <p style="color: #666; margin-bottom: 15px;">
+                <strong>Instrucciones:</strong> Copia desde tu sistema (Excel, nube, etc.) los datos de contratistas y pégalos abajo. 
+                El sistema detectará automáticamente la cédula y el correo de cada línea.
+            </p>
+            
+            <!-- Botón de prueba -->
+            <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center; margin-bottom: 20px;">
+                <button class="btn btn-correo btn-correo-info" onclick="testCorreo()">
+                    🧪 Probar correo
+                </button>
+                <span id="test-status" style="font-weight: 500;"></span>
+            </div>
+            
+            <hr style="border: none; border-top: 1px dashed #dce1e8; margin: 20px 0;">
+            
+            <!-- Tabs para elegir modo -->
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button class="tab-btn active" id="tab-filtro" onclick="cambiarModoCorreo('filtro')">
+                    🔍 Con filtro (cédula + correo)
+                </button>
+                <button class="tab-btn inactive" id="tab-sin-filtro" onclick="cambiarModoCorreo('sin-filtro')">
+                    📧 Sin filtro (solo correos)
+                </button>
+            </div>
+            
+            <!-- ========== MODO CON FILTRO ========== -->
+            <div id="modo-filtro">
+                <div class="info-box">
+                    <strong>ℹ️ ¿Cómo funciona?</strong>
+                    <p>
+                        El sistema comparará la cédula con el Excel de contratistas. 
+                        <strong>Si existe</strong> → enviará la plantilla <strong>"SIN REGISTRO"</strong> (solo documentos).<br>
+                        <strong>Si NO existe</strong> → enviará la plantilla <strong>"CON REGISTRO"</strong> (portal + documentos).
+                    </p>
+                </div>
+                
+                <div class="form-group">
+                    <label>📝 Asunto del correo</label>
+                    <input type="text" id="asunto-filtro" placeholder="Ej: Registro en portal de proveedores" 
+                           style="width:100%; padding:12px; border:2px solid #e0e8f2; border-radius:12px;">
+                </div>
+                
+                <div class="form-group">
+                    <label>📋 Datos de contratistas</label>
+                    <textarea id="datos-filtro" rows="10" 
+                              placeholder="Ejemplo:&#10;1012345678	contratista1@correo.com&#10;1023456789	contratista2@correo.com"
+                              class="correo-textarea" oninput="contarLineas('filtro')"></textarea>
+                    <div class="contador-lineas">
+                        <span>📌 Cada línea debe tener: <strong>Cédula</strong> + <strong>Correo</strong> (separados por tabulador, coma o punto y coma)</span>
+                        <span id="contador-filtro">Líneas: 0</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <button class="btn btn-correo btn-correo-success" onclick="enviarCorreosFiltro()">
+                        📤 Enviar correos
+                    </button>
+                    <button class="btn btn-correo btn-correo-secondary" onclick="limpiarCampo('datos-filtro', 'asunto-filtro', 'status-filtro', 'resultado-filtro')">
+                        🗑️ Limpiar
+                    </button>
+                    <span id="status-filtro" style="font-weight: 500;"></span>
+                </div>
+                
+                <!-- Resultado del envío -->
+                <div id="resultado-filtro" class="resultado-correos"></div>
+            </div>
+            
+            <!-- ========== MODO SIN FILTRO ========== -->
+            <div id="modo-sin-filtro" style="display: none;">
+                <div class="info-box">
+                    <strong>ℹ️ ¿Cómo funciona?</strong>
+                    <p>
+                        El sistema enviará el <strong>mismo correo</strong> a todos los destinatarios, 
+                        <strong>sin comparar cédulas</strong>. Útil cuando solo tienes los correos.
+                    </p>
+                </div>
+                
+                <div class="form-group">
+                    <label>📝 Asunto del correo</label>
+                    <input type="text" id="asunto-sin-filtro" placeholder="Ej: Información importante" 
+                           style="width:100%; padding:12px; border:2px solid #e0e8f2; border-radius:12px;">
+                </div>
+                
+                <div class="form-group">
+                    <label>📋 Elige la plantilla</label>
+                    <select id="plantilla-sin-filtro" style="width:100%; padding:12px; border:2px solid #e0e8f2; border-radius:12px;">
+                        <option value="con_registro">Con registro en portal (plantilla A)</option>
+                        <option value="sin_registro">Sin registro (plantilla B)</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>📧 Correos (uno por línea)</label>
+                    <textarea id="correos-sin-filtro" rows="10" 
+                              placeholder="Ejemplo:&#10;contratista1@correo.com&#10;contratista2@correo.com"
+                              class="correo-textarea" oninput="contarLineas('sin-filtro')"></textarea>
+                    <div class="contador-lineas">
+                        <span>📌 Cada línea debe tener un <strong>correo electrónico</strong></span>
+                        <span id="contador-sin-filtro">Líneas: 0</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                    <button class="btn btn-correo btn-correo-success" onclick="enviarCorreosSinFiltro()">
+                        📤 Enviar correos
+                    </button>
+                    <button class="btn btn-correo btn-correo-secondary" onclick="limpiarCampo('correos-sin-filtro', 'asunto-sin-filtro', 'status-sin-filtro', 'resultado-sin-filtro')">
+                        🗑️ Limpiar
+                    </button>
+                    <span id="status-sin-filtro" style="font-weight: 500;"></span>
+                </div>
+                
+                <!-- Resultado del envío -->
+                <div id="resultado-sin-filtro" class="resultado-correos"></div>
             </div>
         </div>
 
@@ -508,7 +734,6 @@
                 return;
             }
 
-            // Validar extensión
             if (!file.name.toLowerCase().endsWith('.xlsx')) {
                 statusEl.textContent = '❌ El archivo debe ser .xlsx';
                 statusEl.className = 'upload-status-excel error';
@@ -534,7 +759,6 @@
                 if (data.success) {
                     statusEl.textContent = '✅ ' + data.message;
                     statusEl.className = 'upload-status-excel success';
-                    // Recargar estadísticas después de subir
                     setTimeout(() => {
                         cargarEstadisticasSilencioso();
                     }, 1000);
@@ -551,7 +775,6 @@
             input.value = '';
         }
 
-        // Mostrar nombre del archivo seleccionado
         document.getElementById('excel-contratistas').addEventListener('change', function() {
             const statusEl = document.getElementById('status-contratistas');
             if (this.files.length > 0) {
@@ -574,7 +797,6 @@
             }
         });
 
-        // Drag & Drop para las áreas de subida
         ['contratistas', 'seguimiento'].forEach(tipo => {
             const area = document.getElementById(`upload-area-${tipo}`);
             if (!area) return;
@@ -598,6 +820,301 @@
             });
         });
 
+        // ================================================================
+        // ===== FUNCIONES DE CORREOS =====
+        // ================================================================
+
+        // ===== CONTADOR DE LÍNEAS =====
+        function contarLineas(modo) {
+            let inputId = modo === 'filtro' ? 'datos-filtro' : 'correos-sin-filtro';
+            let contadorId = modo === 'filtro' ? 'contador-filtro' : 'contador-sin-filtro';
+            const textarea = document.getElementById(inputId);
+            const lineas = textarea.value.split('\n').filter(line => line.trim() !== '').length;
+            document.getElementById(contadorId).textContent = `Líneas: ${lineas}`;
+        }
+
+        // ===== LIMPIAR CAMPOS =====
+        function limpiarCampo(textareaId, inputId, statusId, resultadoId) {
+            if (confirm('¿Limpiar todos los campos?')) {
+                document.getElementById(textareaId).value = '';
+                document.getElementById(inputId).value = '';
+                document.getElementById(statusId).textContent = '';
+                document.getElementById(resultadoId).className = 'resultado-correos';
+                document.getElementById(resultadoId).style.display = 'none';
+                document.getElementById(resultadoId).innerHTML = '';
+                // Actualizar contador
+                const modo = textareaId.includes('filtro') ? 'filtro' : 'sin-filtro';
+                contarLineas(modo);
+            }
+        }
+
+        // ===== CAMBIAR MODO DE CORREO =====
+        function cambiarModoCorreo(modo) {
+            const tabFiltro = document.getElementById('tab-filtro');
+            const tabSinFiltro = document.getElementById('tab-sin-filtro');
+            const modoFiltro = document.getElementById('modo-filtro');
+            const modoSinFiltro = document.getElementById('modo-sin-filtro');
+            
+            if (modo === 'filtro') {
+                modoFiltro.style.display = 'block';
+                modoSinFiltro.style.display = 'none';
+                tabFiltro.className = 'tab-btn active';
+                tabSinFiltro.className = 'tab-btn inactive';
+            } else {
+                modoFiltro.style.display = 'none';
+                modoSinFiltro.style.display = 'block';
+                tabFiltro.className = 'tab-btn inactive';
+                tabSinFiltro.className = 'tab-btn active';
+            }
+        }
+
+        // ===== PRUEBA DE CORREO =====
+        async function testCorreo() {
+            const statusEl = document.getElementById('test-status');
+            const correo = prompt('📧 Ingresa tu correo para la prueba:');
+            
+            if (!correo || !correo.includes('@')) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Correo inválido';
+                return;
+            }
+
+            statusEl.style.color = '#003a70';
+            statusEl.textContent = '⏳ Enviando correo de prueba...';
+
+            try {
+                const response = await fetch('/api/admin/test-correo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ destinatario: correo })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    statusEl.style.color = 'green';
+                    statusEl.textContent = '✅ ' + data.message;
+                } else {
+                    statusEl.style.color = 'red';
+                    statusEl.textContent = '❌ ' + (data.error || 'Error al enviar');
+                }
+            } catch (error) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Error de conexión';
+            }
+        }
+
+        // ===== ENVIAR CORREOS CON FILTRO =====
+        async function enviarCorreosFiltro() {
+            const asunto = document.getElementById('asunto-filtro').value.trim();
+            const datos = document.getElementById('datos-filtro').value.trim();
+            const statusEl = document.getElementById('status-filtro');
+            const resultadoDiv = document.getElementById('resultado-filtro');
+
+            if (!asunto) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Ingresa un asunto';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> Ingresa un asunto para el correo.';
+                return;
+            }
+
+            if (!datos) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Pega los datos de contratistas';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> Pega los datos de contratistas (cédula y correo).';
+                return;
+            }
+
+            // Parsear los datos
+            const lineas = datos.split('\n').filter(line => line.trim() !== '');
+            const items = [];
+
+            for (const linea of lineas) {
+                let partes = null;
+                if (linea.includes('\t')) {
+                    partes = linea.split('\t');
+                } else if (linea.includes(',')) {
+                    partes = linea.split(',');
+                } else if (linea.includes(';')) {
+                    partes = linea.split(';');
+                } else {
+                    statusEl.style.color = 'red';
+                    statusEl.textContent = '❌ Formato no reconocido';
+                    resultadoDiv.className = 'resultado-correos error';
+                    resultadoDiv.innerHTML = `<strong>❌ Error:</strong> Formato no reconocido en: <code>${linea}</code>`;
+                    return;
+                }
+
+                partes = partes.map(p => p.trim());
+                let cedula = null;
+                let correo = null;
+                for (const p of partes) {
+                    if (p.match(/^\d{6,12}$/)) {
+                        cedula = p;
+                    } else if (p.includes('@')) {
+                        correo = p;
+                    }
+                }
+
+                if (cedula && correo) {
+                    items.push({ cedula, correo });
+                } else {
+                    statusEl.style.color = 'red';
+                    statusEl.textContent = '❌ No se pudo identificar cédula y correo';
+                    resultadoDiv.className = 'resultado-correos error';
+                    resultadoDiv.innerHTML = `<strong>❌ Error:</strong> No se pudo identificar cédula y correo en: <code>${linea}</code>`;
+                    return;
+                }
+            }
+
+            if (items.length === 0) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ No se encontraron datos válidos';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> No se encontraron datos válidos para enviar.';
+                return;
+            }
+
+            if (items.length > 500) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Demasiados destinatarios (máximo 500)';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> Demasiados destinatarios (máximo 500).';
+                return;
+            }
+
+            if (!confirm(`¿Enviar ${items.length} correos con filtro?`)) return;
+
+            statusEl.style.color = '#003a70';
+            statusEl.textContent = `⏳ Enviando a ${items.length} contratistas...`;
+            resultadoDiv.className = 'resultado-correos';
+            resultadoDiv.style.display = 'block';
+            resultadoDiv.innerHTML = '<p>⏳ Enviando correos, por favor espera...</p>';
+
+            try {
+                const response = await fetch('/api/admin/enviar-correos-pegados', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ asunto, destinatarios: items })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    statusEl.style.color = 'green';
+                    statusEl.textContent = `✅ Enviados: ${data.exitosos}, Fallidos: ${data.fallidos}`;
+                    resultadoDiv.className = 'resultado-correos exito';
+                    resultadoDiv.innerHTML = `
+                        <h4>📊 Resumen de envío</h4>
+                        <p><strong>✅ Exitosos:</strong> ${data.exitosos}</p>
+                        <p><strong>❌ Fallidos:</strong> ${data.fallidos}</p>
+                        <p><strong>📝 Con registro:</strong> ${data.con_registro || 0}</p>
+                        <p><strong>📝 Sin registro:</strong> ${data.sin_registro || 0}</p>
+                        ${data.errores && data.errores.length > 0 ? `<p style="color:#dc3545;"><strong>Errores:</strong><br>${data.errores.join('<br>')}</p>` : ''}
+                    `;
+                    if (data.fallidos === 0) {
+                        document.getElementById('datos-filtro').value = '';
+                        document.getElementById('asunto-filtro').value = '';
+                    }
+                } else {
+                    statusEl.style.color = 'red';
+                    statusEl.textContent = '❌ ' + (data.error || 'Error');
+                    resultadoDiv.className = 'resultado-correos error';
+                    resultadoDiv.innerHTML = `<strong>❌ Error:</strong> ${data.error || 'Error desconocido al enviar correos'}`;
+                }
+            } catch (error) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Error de conexión';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> Error de conexión con el servidor. Verifica que el servidor esté corriendo.';
+            }
+        }
+
+        // ===== ENVIAR CORREOS SIN FILTRO =====
+        async function enviarCorreosSinFiltro() {
+            const asunto = document.getElementById('asunto-sin-filtro').value.trim();
+            const correosRaw = document.getElementById('correos-sin-filtro').value.trim();
+            const plantilla = document.getElementById('plantilla-sin-filtro').value;
+            const statusEl = document.getElementById('status-sin-filtro');
+            const resultadoDiv = document.getElementById('resultado-sin-filtro');
+
+            if (!asunto) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Ingresa un asunto';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> Ingresa un asunto para el correo.';
+                return;
+            }
+
+            if (!correosRaw) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Pega los correos';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> Pega los correos de los destinatarios.';
+                return;
+            }
+
+            const correos = correosRaw.split('\n').map(c => c.trim()).filter(c => c.includes('@'));
+            if (correos.length === 0) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ No hay correos válidos';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> No hay correos válidos para enviar.';
+                return;
+            }
+            if (correos.length > 500) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Demasiados destinatarios (máximo 500)';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> Demasiados destinatarios (máximo 500).';
+                return;
+            }
+
+            if (!confirm(`¿Enviar ${correos.length} correos sin filtro?`)) return;
+
+            statusEl.style.color = '#003a70';
+            statusEl.textContent = `⏳ Enviando a ${correos.length} destinatarios...`;
+            resultadoDiv.className = 'resultado-correos';
+            resultadoDiv.style.display = 'block';
+            resultadoDiv.innerHTML = '<p>⏳ Enviando correos, por favor espera...</p>';
+
+            try {
+                const response = await fetch('/api/admin/enviar-correos-sin-filtro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ asunto, destinatarios: correos, plantilla })
+                });
+                const data = await response.json();
+                if (data.success) {
+                    statusEl.style.color = 'green';
+                    statusEl.textContent = `✅ Enviados: ${data.exitosos}, Fallidos: ${data.fallidos}`;
+                    resultadoDiv.className = 'resultado-correos exito';
+                    resultadoDiv.innerHTML = `
+                        <h4>📊 Resumen de envío</h4>
+                        <p><strong>✅ Exitosos:</strong> ${data.exitosos}</p>
+                        <p><strong>❌ Fallidos:</strong> ${data.fallidos}</p>
+                        ${data.errores && data.errores.length > 0 ? `<p style="color:#dc3545;"><strong>Errores:</strong><br>${data.errores.join('<br>')}</p>` : ''}
+                    `;
+                    if (data.fallidos === 0) {
+                        document.getElementById('correos-sin-filtro').value = '';
+                        document.getElementById('asunto-sin-filtro').value = '';
+                    }
+                } else {
+                    statusEl.style.color = 'red';
+                    statusEl.textContent = '❌ ' + (data.error || 'Error');
+                    resultadoDiv.className = 'resultado-correos error';
+                    resultadoDiv.innerHTML = `<strong>❌ Error:</strong> ${data.error || 'Error desconocido al enviar correos'}`;
+                }
+            } catch (error) {
+                statusEl.style.color = 'red';
+                statusEl.textContent = '❌ Error de conexión';
+                resultadoDiv.className = 'resultado-correos error';
+                resultadoDiv.innerHTML = '<strong>❌ Error:</strong> Error de conexión con el servidor. Verifica que el servidor esté corriendo.';
+            }
+        }
+
         async function logout() {
             try {
                 await fetch('/api/admin/logout', {method: 'POST', credentials: 'include'});
@@ -608,26 +1125,27 @@
             window.location.href = '/login';
         }
     </script>
-</body>
-<script>
-    // ===== MODO OSCURO =====
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggle = document.getElementById('themeToggle');
-        if (!toggle) return;
+    
+    <!-- ===== MODO OSCURO ===== -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('themeToggle');
+            if (!toggle) return;
 
-        // Cargar preferencia guardada
-        const darkMode = localStorage.getItem('darkMode') === 'true';
-        if (darkMode) {
-            document.body.classList.add('dark-mode');
-            toggle.textContent = '☀️';
-        }
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) {
+                document.body.classList.add('dark-mode');
+                toggle.textContent = '☀️';
+            }
 
-        toggle.addEventListener('click', function() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark);
-            toggle.textContent = isDark ? '☀️' : '🌙';
+            toggle.addEventListener('click', function() {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDark);
+                toggle.textContent = isDark ? '☀️' : '🌙';
+            });
         });
-    });
-</script>
+    </script>
+
+</body>
 </html>
