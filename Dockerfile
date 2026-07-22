@@ -1,6 +1,6 @@
-FROM python:3.11-slim
+FROM python:3.10-slim
 
-# Instalar dependencias del sistema (Tesseract, Poppler, etc.)
+# Instalar dependencias del sistema
 RUN apt-get update && apt-get install -y \
     tesseract-ocr \
     tesseract-ocr-spa \
@@ -13,7 +13,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-# Instalar torch sin CUDA para reducir el tamaño
+# Instalar torch sin CUDA (necesario para sentence-transformers)
 RUN pip install torch==2.0.1 --index-url https://download.pytorch.org/whl/cpu
 
 RUN pip install --no-cache-dir -r requirements.txt
