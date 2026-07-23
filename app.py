@@ -90,13 +90,35 @@ def limpiar_objeto(objeto):
 
 
 # ==================== CARGAR .ENV ====================
-if os.path.exists('hola.env'):
-    load_dotenv('hola.env')
-    print("✅ Archivo hola.env cargado correctamente")
-else:
-    load_dotenv()
-    print("⚠️ No se encontró hola.env, intentando con .env")
+# ==================== CARGAR VARIABLES DE ENTORNO ====================
+# Intentar cargar .env solo si existe (para desarrollo local)
+try:
+    from dotenv import load_dotenv
+    if os.path.exists('hola.env'):
+        load_dotenv('hola.env')
+        print("✅ Archivo hola.env cargado correctamente (local)")
+    else:
+        load_dotenv()
+        print("⚠️ No se encontró hola.env, intentando con .env")
+except:
+    print("⚠️ python-dotenv no instalado o no disponible")
 
+# ==================== CONFIGURACIÓN SMTP ====================
+SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.gmail.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SMTP_USER = os.environ.get('SMTP_USER', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+SMTP_FROM = os.environ.get('SMTP_FROM', SMTP_USER)
+
+# ===== LOG PARA DEPURACIÓN (IMPORTANTE) =====
+print("=" * 50)
+print("🔍 CONFIGURACIÓN SMTP:")
+print(f"  SMTP_HOST: {SMTP_HOST}")
+print(f"  SMTP_PORT: {SMTP_PORT}")
+print(f"  SMTP_USER: {SMTP_USER}")
+print(f"  SMTP_FROM: {SMTP_FROM}")
+print(f"  SMTP_PASSWORD: {'*' * 10 if SMTP_PASSWORD else '❌ NO CONFIGURADA'}")
+print("=" * 50)
 # ==================== CONFIGURACIÓN SMTP ====================
 SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.office365.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
@@ -1239,6 +1261,18 @@ def upload_excel():
             'error': f'Error al recargar los datos: {str(e)}'
         }), 500
 
+@app.route('/api/admin/test-env', methods=['GET'])
+@admin_required
+def test_env():
+    """Endpoint para verificar variables de entorno en Render"""
+    return jsonify({
+        'SMTP_USER': os.environ.get('SMTP_USER', 'NO_CONFIGURADO'),
+        'SMTP_HOST': os.environ.get('SMTP_HOST', 'NO_CONFIGURADO'),
+        'SMTP_PORT': os.environ.get('SMTP_PORT', 'NO_CONFIGURADO'),
+        'SMTP_FROM': os.environ.get('SMTP_FROM', 'NO_CONFIGURADO'),
+        'SECRET_KEY': os.environ.get('SECRET_KEY', 'NO_CONFIGURADO')[:10] + '...' if os.environ.get('SECRET_KEY') else 'NO_CONFIGURADO'
+    })
+
 # ==================== CABECERAS DE SEGURIDAD ====================
 @app.after_request
 def add_security_headers(response):
@@ -1259,3 +1293,6 @@ if __name__ == '__main__':
     print("=" * 50)
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     app.run(debug=debug_mode, port=5000)
+
+
+    
