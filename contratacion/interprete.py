@@ -207,13 +207,13 @@ def traducir_observacion(texto_observacion):
             # Agregar la fecha al inicio si la línea tiene una
             fecha = extraer_fecha(linea)
             if fecha:
-                linea_traducida = f"📅 **{fecha}**: {linea_traducida}"
+                linea_traducida = f"📅 {fecha}: {linea_traducida}"
             lineas_traducidas.append(linea_traducida)
     
     if not lineas_traducidas:
         return None
     
-    return "🔄 **HISTORIAL DE TU PROCESO:**\n\n" + "\n".join(lineas_traducidas[:10])
+    return "🔄 HISTORIAL DE TU PROCESO:\n\n" + "\n".join(lineas_traducidas[:10])
 
 
 def limpiar_texto(texto):

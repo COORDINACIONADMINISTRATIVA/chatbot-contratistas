@@ -492,16 +492,16 @@ class ValidadorRUT:
 
         # Solo mostrar nombre si viene del sistema (no del RUT)
         if contratista_info and contratista_info.get('nombre'):
-            lineas.append(f"👤 **Contratista:** {contratista_info['nombre']}")
+            lineas.append(f"👤 Contratista: {contratista_info['nombre']}")
             if contratista_info.get('cedula'):
-                lineas.append(f"🆔 **Cédula:** {contratista_info['cedula']}")
+                lineas.append(f"🆔 Cédula: {contratista_info['cedula']}")
             lineas.append("")
 
         # Veredicto final
         if resultados['valido']:
-            lineas.append("✅ **¡Tu RUT está listo para subir a la plataforma!**")
+            lineas.append("✅ ¡Tu RUT está listo para subir a la plataforma!")
         else:
-            lineas.append("❌ **Tu RUT tiene problemas que debes corregir:**")
+            lineas.append("❌ Tu RUT tiene problemas que debes corregir:")
 
         lineas.append("")
 
@@ -519,14 +519,14 @@ class ValidadorRUT:
         # Mostrar advertencias
         if resultados['advertencias']:
             lineas.append("")
-            lineas.append("⚠️ **Advertencias:**")
+            lineas.append("⚠️ Advertencias:")
             for a in resultados['advertencias']:
                 lineas.append(f"  {a}")
 
         # Consejos útiles si hay errores
         if not resultados['valido']:
             lineas.append("")
-            lineas.append("📌 **¿Qué hacer?**")
+            lineas.append("📌 ¿Qué hacer?")
             errores_texto = " ".join(resultados['errores']).lower()
             if any(p in errores_texto for p in ['trámite', 'tramite']):
                 lineas.append("  • Espera a tener 'Actualización' o 'Copia', no 'En trámite'")

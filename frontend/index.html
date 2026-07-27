@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mi Proceso - Asistente de Contratación UNIMINUTO</title>
+    <title>Consultar mi estado - Asistente de Contratación UNIMINUTO</title>
     <link rel="stylesheet" href="/static/css/estilos.css">
     <style>
         /* Estilos específicos para index */
@@ -228,13 +228,13 @@
     <header class="header">
         <div class="header-content">
             <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">
-    🌙
-</button>
+                🌙
+            </button>
             <div class="header-left">
                 <img src="/static/images/logo2.png" alt="UNIMINUTO" class="header-logo">
                 <div>
-                    <h1>🔍 Mi Proceso de Contratación</h1>
-                    <p>Consulta el estado de tu vinculación con UNIMINUTO Virtual</p>
+                    <h1>🔍 Consultar mi estado</h1>
+                    <p>Ingrese su número de documento de identidad para validar el estado de su contrato.</p>
                 </div>
             </div>
         </div>
@@ -243,8 +243,8 @@
     <!-- TABS DE NAVEGACIÓN -->
     <nav class="tabs">
         <div class="tabs-container">
-            <a href="/" class="tab active"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
-            <a href="/consultas" class="tab"><span class="tab-icon">📚</span><span>Consultas</span></a>
+            <a href="/" class="tab active"><span class="tab-icon">🔍</span><span>Consultar mi estado</span></a>
+            <a href="/consultas" class="tab"><span class="tab-icon">📚</span><span>Preguntas Frecuentes</span></a>
             <a href="/login" class="tab tab-admin"><span class="tab-icon">⚙️</span><span>Admin</span></a>
         </div>
     </nav>
@@ -256,10 +256,10 @@
         <div class="card">
             <div class="card-header">
                 <span class="hero-icon">📋</span>
-                <h2>Consultar mi estado</h2>
+                <h2>Consultar mi estado de contratación</h2>
             </div>
             <p class="subseccion-desc">
-                Ingresa tu número de cédula para ver el estado actual de tu(s) contrato(s) y el historial completo de tu proceso.
+                Ingrese su número de documento de identidad para validar el estado de su contrato.
                 <br><small style="color: #8a9aaa;">⚠️ Esta consulta es independiente de la validación del RUT.</small>
             </p>
             
@@ -279,11 +279,10 @@
         <div class="card">
             <div class="card-header">
                 <span class="hero-icon">📄</span>
-                <h2>Validar mi RUT</h2>
+                <h2>Validador de RUT</h2>
             </div>
             <p class="subseccion-desc">
-                Sube tu RUT en formato PDF para que lo revisemos automáticamente.
-                <br><small style="color: #8a9aaa;">⚠️ Esta validación es independiente de la consulta de cédula.</small>
+                En este espacio puede subir su RUT en formato PDF para verificar de una primer instancia si cumple con los requisitos mínimos exigidos por UNIMINUTO.
             </p>
             
             <div class="upload-area" id="upload-area">
@@ -294,7 +293,7 @@
                     <input type="text" id="cedula-rut" placeholder="Ej: 1234567890" 
                            style="width: 100%; padding: 12px 18px; border: 2px solid #e0e8f2; border-radius: 30px; font-size: 0.95em; margin-bottom: 14px;">
                     <p class="upload-hint">
-                        Si dejas este campo vacío, solo se mostrarán los datos extraídos del PDF sin verificar contra una cédula.
+                        Si deja este campo vacío, solo se mostrarán los datos extraídos del PDF sin verificar contra una cédula.
                     </p>
                 </div>
                 
@@ -303,7 +302,7 @@
                     📤 Seleccionar RUT (PDF)
                 </button>
                 <span class="upload-status" id="upload-status">Archivo seleccionado: Ninguno</span>
-                <p class="upload-hint" style="margin-top: 8px;">💡 También puedes arrastrar y soltar tu archivo PDF aquí.</p>
+                <p class="upload-hint" style="margin-top: 8px;">💡 También puede arrastrar y soltar su archivo PDF aquí.</p>
             </div>
 
             <!-- Resultado del análisis del RUT -->
@@ -339,7 +338,7 @@
             const resultadoDiv = document.getElementById('resultado');
             
             if (!cedula) {
-                resultadoDiv.innerHTML = '<div class="alert alert-warning">⚠️ Ingresa una cédula</div>';
+                resultadoDiv.innerHTML = '<div class="alert alert-warning">⚠️ Ingrese una cédula</div>';
                 return;
             }
             
@@ -367,7 +366,7 @@
                 let html = '';
                 
                 if (data.cantidad > 1) {
-                    html += '<div class="alert alert-info">📋 Tienes <strong>' + data.cantidad + '</strong> registros asociados.</div>';
+                    html += '<div class="alert alert-info">📋 Tiene <strong>' + data.cantidad + '</strong> registros asociados.</div>';
                 }
                 
                 // Procesar cada contratista
@@ -431,12 +430,12 @@
                 
             } catch (error) {
                 console.error('Error completo:', error);
-                resultadoDiv.innerHTML = '<div class="alert alert-danger">❌ Error al buscar. Verifica tu conexión e intenta de nuevo.</div>';
+                resultadoDiv.innerHTML = '<div class="alert alert-danger">❌ Error al buscar. Verifique su conexión e intente de nuevo.</div>';
             }
         }
 
         // ================================================================
-        // SECCIÓN 2: SUBIR RUT (100% INDEPENDIENTE, NO usa localStorage)
+        // SECCIÓN 2: VALIDAR RUT (100% INDEPENDIENTE)
         // ================================================================
         function renderDatosRutTabla(datos) {
             const etiquetas = {
@@ -512,7 +511,7 @@
             
             const file = fileInput.files[0];
             if (!file) {
-                statusEl.textContent = '❌ No seleccionaste ningún archivo';
+                statusEl.textContent = '❌ No seleccionó ningún archivo';
                 statusEl.className = 'upload-status error';
                 return;
             }
@@ -527,7 +526,7 @@
             
             // Verificar tamaño (máximo 10MB)
             if (file.size > 10 * 1024 * 1024) {
-                statusEl.textContent = '❌ El archivo es demasiado grande (máx 10MB)';
+                statusEl.textContent = '❌ El archivo es demasiado grande (máximo 10 MB)';
                 statusEl.className = 'upload-status error';
                 fileInput.value = '';
                 return;

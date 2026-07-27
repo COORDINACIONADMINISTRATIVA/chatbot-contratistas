@@ -90,8 +90,6 @@ def limpiar_objeto(objeto):
 
 
 # ==================== CARGAR .ENV ====================
-# ==================== CARGAR VARIABLES DE ENTORNO ====================
-# Intentar cargar .env solo si existe (para desarrollo local)
 try:
     from dotenv import load_dotenv
     if os.path.exists('hola.env'):
@@ -110,7 +108,6 @@ SMTP_USER = os.environ.get('SMTP_USER', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
 SMTP_FROM = os.environ.get('SMTP_FROM', SMTP_USER)
 
-# ===== LOG PARA DEPURACIÓN (IMPORTANTE) =====
 print("=" * 50)
 print("🔍 CONFIGURACIÓN SMTP:")
 print(f"  SMTP_HOST: {SMTP_HOST}")
@@ -119,14 +116,6 @@ print(f"  SMTP_USER: {SMTP_USER}")
 print(f"  SMTP_FROM: {SMTP_FROM}")
 print(f"  SMTP_PASSWORD: {'*' * 10 if SMTP_PASSWORD else '❌ NO CONFIGURADA'}")
 print("=" * 50)
-# ==================== CONFIGURACIÓN SMTP ====================
-SMTP_HOST = os.environ.get('SMTP_HOST', 'smtp.office365.com')
-SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
-SMTP_USER = os.environ.get('SMTP_USER', '')
-SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
-SMTP_FROM = os.environ.get('SMTP_FROM', SMTP_USER)
-
-print(f"📧 SMTP configurado con: {SMTP_USER} - Host: {SMTP_HOST}")
 
 # ==================== LOGGING ====================
 logging.basicConfig(
@@ -299,8 +288,7 @@ def enviar_correos_pegados():
     
     if len(destinatarios) > 500:
         return jsonify({'success': False, 'error': 'Demasiados destinatarios (máximo 500)'}), 400
-    
-    # ==================== PLANTILLAS ====================
+
     PLANTILLA_CON_REGISTRO = """
     Buen día, {nombre}
 
@@ -384,27 +372,21 @@ def enviar_correos_pegados():
             errores.append(f"Datos inválidos: {item}")
             continue
         
-        # ===== LIMPIAR CÉDULA =====
-        # Quitar comillas, espacios, puntos, etc.
+        # Limpiar cédula
         cedula_limpia = re.sub(r'["\'\.\s,;]', '', str(cedula))
-        # Si tiene formato 1.234.567, quitar puntos
         if re.search(r'\d{1,3}\.\d{3}\.\d{3}', cedula_limpia):
             cedula_limpia = re.sub(r'\.', '', cedula_limpia)
-        # Quitar texto después de números (ej: "1030543373 de Bogotá")
         if re.search(r'\d{6,12}\s+[a-zA-Z]', cedula_limpia):
             cedula_limpia = re.sub(r'\s+[a-zA-Z].*$', '', cedula_limpia)
         
-        # Verificar que sea un número válido
         if not re.match(r'^\d{6,12}$', cedula_limpia):
             fallidos += 1
-            errores.append(f"Cédula inválida: {cedula} (limpia: {cedula_limpia})")
+            errores.append(f"Cédula inválida: {cedula}")
             continue
         
-        # ===== BUSCAR EN EXCEL =====
         registros = lector.buscar_por_cedula(cedula_limpia)
         tiene_contrato = registros is not None and len(registros) > 0
         
-        # ===== OBTENER DATOS =====
         nombre = "Contratista"
         fecha_inicio = "01/08/2026"
         fecha_fin = "31/12/2026"
@@ -420,7 +402,6 @@ def enviar_correos_pegados():
             if info.get('objeto'):
                 objeto = info.get('objeto')
         
-        # ===== ELEGIR PLANTILLA =====
         if tiene_contrato:
             plantilla = PLANTILLA_SIN_REGISTRO
             sin_registro += 1
@@ -428,7 +409,6 @@ def enviar_correos_pegados():
             plantilla = PLANTILLA_CON_REGISTRO
             con_registro += 1
         
-        # ===== PERSONALIZAR Y ENVIAR =====
         cuerpo = plantilla.format(
             nombre=nombre,
             objeto=objeto,
@@ -454,7 +434,6 @@ def enviar_correos_pegados():
         'errores': errores[:10]
     })
 
-
 # ==================== ENVÍO DE CORREOS SIN FILTRO ====================
 @app.route('/api/admin/enviar-correos-sin-filtro', methods=['POST'])
 @admin_required
@@ -477,7 +456,6 @@ def enviar_correos_sin_filtro():
     if len(destinatarios) > 500:
         return jsonify({'success': False, 'error': 'Demasiados destinatarios (máximo 500)'}), 400
     
-    # Plantillas (mismo texto que arriba, pero las reutilizamos)
     PLANTILLA_CON_REGISTRO = """
     Buen día,
 
@@ -485,42 +463,26 @@ def enviar_correos_sin_filtro():
 
     👉 Enlace portal de proveedores: https://proveedores.uniminuto.edu
 
-    🛎️ Video tutorial
-    Proceso para Registro en Plataforma-20260223_170351-Grabación de la reunión.mp4
-
-    ✍️ Instructivo Portal Proveedores icono de pdf Instructivo Portal Proveedores _ Usuarios Externos.pdf
-
     Es importante tener en cuenta lo siguiente al momento del registro:
+    - Seleccionar la Sede de Operaciones: Rectoría UNIMINUTO Virtual.
+    - En la opción Bien o Servicio, seleccionar Servicio y posteriormente la categoría correspondiente.
+    - En el apartado 24 de su RUT se indica el tipo de contribuyente el cual debe coincidir con el registro en el portal.
+    - Régimen: Persona Natural → Simplificado, Persona Jurídica → Común.
+    - Tratamiento: Señor(a) → si no es colaborador; Empleado(a) → solo si es colaborador UNIMINUTO.
 
-    Seleccionar la Sede de Operaciones: Rectoría UNIMINUTO Virtual.
-    En la opción Bien o Servicio, seleccionar Servicio y posteriormente la categoría correspondiente.
-
-    Tenga en cuenta que en el apartado 24 de su RUT se indica el tipo de contribuyente el cual debe coincidir con el registro en el portal.
-
-    Seleccione de la siguiente manera el régimen: en caso de ser persona natural seleccione "Simplificado", si es persona juridica seleccione "Común"
-
-    En el apartado de tratamiento debe seleccionar "Señor(a)", solamente en caso de que usted sea colaborador de UNIMINUTO seleccione "Empleado(a)".
-
-    Así mismo, agradecemos enviar la siguiente documentación en formato PDF y sin contraseñas para proceder con los tramites internos requeridos para el proceso de contratación por prestación de servicios solicitado por UNIMINUTO VIRTUAL:
+    Así mismo, agradecemos enviar la siguiente documentación en formato PDF y sin contraseñas para proceder con los trámites internos requeridos para el proceso de contratación por prestación de servicios solicitado por UNIMINUTO VIRTUAL:
 
     Documentos mínimos requeridos:
-
-    Cédula de ciudadanía.
-    Certificación bancaria con fecha de expedición no mayor a 30 días.
-    Cotización firmada y en formato PDF icono de docx Ejemplo Cotización.docx
-    RUT actualizado con fecha de expedición no mayor a 30 días. La actividad económica registrada debe corresponder a la labor a desarrollar; en caso de no contar con una actividad específica, se sugiere utilizar el código 8560 – Actividades de apoyo a la educación.
-
-    Formato Excel adjunto debidamente diligenciado icono de xlsm Ingreso Independientes.xlsm
-    Certificación de afiliación a ARL activa como trabajador independiente.
-    Examen médico ocupacional (máxima vigencia de 3 años).
+    - Cédula de ciudadanía.
+    - Certificación bancaria con fecha de expedición no mayor a 30 días.
+    - Cotización firmada y en formato PDF.
+    - RUT actualizado con fecha de expedición no mayor a 30 días. La actividad económica registrada debe corresponder a la labor a desarrollar; en caso de no contar con una actividad específica, se sugiere utilizar el código 8560 – Actividades de apoyo a la educación.
+    - Formato Excel adjunto debidamente diligenciado.
+    - Certificación de afiliación a ARL activa como trabajador independiente.
+    - Examen médico ocupacional (máxima vigencia de 3 años).
 
     ✨IMPORTANTE:
-
-    ✍️Si no tiene la actividad correspondiente en el RUT para la labor que va a realizar, comparto el instructivo con los pasos para que pueda actualizar
-
-    Paso a paso para actualizar tu RUT.pdf
     🧮 Recuerde que el NO REGISTRO EFECTIVO en el portal de proveedores o la falta de alguno de los documentos anteriormente solicitados generará retrazos y afectaciones en el proceso de contratación el cual se notificará al supervisor del proyecto.
-
     🔎 Al momento de la recepción de este correo debe realizar su registro y envio de documentos de manera inmediata.
 
     ✨OBJETO DEL CONTRATO:
@@ -537,24 +499,18 @@ def enviar_correos_sin_filtro():
     PLANTILLA_SIN_REGISTRO = """
     Buen día,
 
-    Así mismo, agradecemos enviar la siguiente documentación en formato PDF y sin contraseñas para proceder con los tramites internos requeridos para el proceso de contratación por prestación de servicios solicitado por UNIMINUTO VIRTUAL:
+    Solicitamos su colaboración envio de la siguiente documentación en formato PDF y sin contraseñas para proceder con los tramites internos requeridos para el proceso de contratación por prestación de servicios solicitado por UNIMINUTO VIRTUAL:
 
     Documentos mínimos requeridos:
-
-    Cédula de ciudadanía.
-    Certificación bancaria con fecha de expedición no mayor a 30 días.
-    Cotización firmada y en formato PDF icono de docx Ejemplo Cotización.docx
-    RUT actualizado con fecha de expedición no mayor a 30 días. La actividad económica registrada debe corresponder a la labor a desarrollar; en caso de no contar con una actividad específica, se sugiere utilizar el código 8560 – Actividades de apoyo a la educación.
-
-    Formato Excel adjunto debidamente diligenciado icono de xlsm Ingreso Independientes.xlsm
-    Certificación de afiliación a ARL activa como trabajador independiente.
-    Examen médico ocupacional (máxima vigencia de 3 años).
+    - Cédula de ciudadanía.
+    - Certificación bancaria con fecha de expedición no mayor a 30 días.
+    - Cotización firmada y en formato PDF.
+    - RUT actualizado con fecha de expedición no mayor a 30 días. La actividad económica registrada debe corresponder a la labor a desarrollar; en caso de no contar con una actividad específica, se sugiere utilizar el código 8560 – Actividades de apoyo a la educación.
+    - Formato Excel adjunto debidamente diligenciado.
+    - Certificación de afiliación a ARL activa como trabajador independiente.
+    - Examen médico ocupacional (máxima vigencia de 3 años).
 
     ✨IMPORTANTE:
-
-    ✍️Si no tiene la actividad correspondiente en el RUT para la labor que va a realizar, comparto el instructivo con los pasos para que pueda actualizar
-
-    Paso a paso para actualizar tu RUT.pdf
     🧮 Recuerde que la falta de alguno de los documentos anteriormente solicitados generará retrazos y afectaciones en el proceso de contratación el cual se notificará al supervisor del proyecto.
 
     ✨OBJETO DEL CONTRATO:
@@ -580,7 +536,6 @@ def enviar_correos_sin_filtro():
             errores.append(f"Correo inválido: {correo}")
             continue
         
-        # Datos por defecto para modo sin filtro
         nombre = "Contratista"
         objeto = "Prestación de servicios profesionales como experto disciplinar para la construcción de documentos de obtención de registro calificado."
         fecha_inicio = "01/08/2026"
@@ -619,7 +574,7 @@ def chat():
     if not pregunta:
         return jsonify({'error': 'Mensaje vacio'}), 400
 
-    respuesta = responder_contratista(pregunta)
+    respuesta = responder_contratista(pregunta, usuario=usuario)
     intencion = 'contratista'
     confianza = 1.0
     fuente = 'contratista_excel'
@@ -903,7 +858,6 @@ def admin_login():
     if not usuario or not contrasena:
         return jsonify({'success': False, 'error': 'Faltan usuario o contraseña'}), 400
     
-    # --- Rate Limiting ---
     ip = request.remote_addr
     now = datetime.now()
     login_attempts[ip] = [t for t in login_attempts[ip] if now - t < timedelta(minutes=5)]
@@ -923,10 +877,8 @@ def admin_login():
             logging.warning(f"Login fallido: usuario '{usuario}' no existe desde {request.remote_addr}")
             return jsonify({'success': False, 'error': 'Credenciales inválidas'}), 401
         
-        # --- Verificar con bcrypt ---
         try:
             if bcrypt.checkpw(contrasena.encode(), admin['contrasena'].encode()):
-                # Login exitoso
                 login_attempts[ip] = []
                 session.permanent = True
                 session['admin_id'] = admin['id']
@@ -946,11 +898,9 @@ def admin_login():
                     }
                 })
         except ValueError:
-            # Si falla bcrypt, intentar con SHA256 (migración)
             import hashlib
             contrasena_hash_sha256 = hashlib.sha256(contrasena.encode()).hexdigest()
             if admin['contrasena'] == contrasena_hash_sha256:
-                # Migrar a bcrypt
                 nuevo_hash = bcrypt.hashpw(contrasena.encode(), bcrypt.gensalt()).decode()
                 conn = get_connection()
                 cursor = conn.cursor()
@@ -977,7 +927,6 @@ def admin_login():
                     }
                 })
         
-        # Si llegamos aquí, falló
         login_attempts[ip].append(now)
         logging.warning(f"Login fallido: contraseña incorrecta para {usuario} desde {request.remote_addr}")
         return jsonify({'success': False, 'error': 'Credenciales inválidas'}), 401
@@ -1138,7 +1087,6 @@ def supervisor_dashboard():
             grouped = grouped[grouped['total_problemas'] > 0].sort_values('total_problemas', ascending=False).head(15)
             top_problemas = grouped.to_dict('records')
 
-        # Estadísticas de seguimiento
         seguimiento_df = lector_seguimiento.df
         seguimiento_stats = {}
         if seguimiento_df is not None and not seguimiento_df.empty:
@@ -1162,7 +1110,6 @@ def supervisor_dashboard():
                 'activos': 0
             }
 
-        # Datos del chat
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('SELECT COUNT(*) as total FROM consultas')
@@ -1206,6 +1153,70 @@ def supervisor_dashboard():
         print(f"Error en supervisor_dashboard: {e}")
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
+
+def detectar_intencion(texto):
+    t = texto.lower()
+    cedula = extraer_cedula(texto)
+    
+    # ============================================================
+    # 1. PRIORIDAD MÁXIMA: RUT (crear, actualizar, subir)
+    # ============================================================
+    if 'rut' in t:
+        # ¿Quiere CREAR/OBTENER por primera vez?
+        if any(p in t for p in ['crear', 'hacer', 'obtener', 'sacar', 'conseguir', 'tramitar', 'solicitar', 'no tengo', 'no he podido']):
+            return 'crear_rut', cedula
+        # ¿Quiere ACTUALIZAR/RENOVAR?
+        if any(p in t for p in ['actualizar', 'renovar', 'actualización', 'cambiar', 'modificar']):
+            return 'actualizar_rut', cedula
+        # ¿Quiere SUBIR/VALIDAR?
+        if any(p in t for p in ['subir', 'validar', 'revisar', 'verificar', 'analizar']):
+            return 'subir_rut', cedula
+        # Por defecto, asumir actualización
+        return 'actualizar_rut', cedula
+    
+    # ============================================================
+    # 2. ARL
+    # ============================================================
+    if any(p in t for p in ['arl', 'afiliarme', 'riesgos laborales']):
+        return 'arl', cedula
+    
+    # ============================================================
+    # 3. DOCUMENTOS (general, natural, juridica)
+    # ============================================================
+    if any(p in t for p in ['documentos', 'papeles', 'requisitos', 'que necesito', 'que me piden']):
+        if 'natural' in t or 'independiente' in t:
+            return 'documentos_natural', cedula
+        if 'empresa' in t or 'juridica' in t or 'jurídica' in t:
+            return 'documentos_juridica', cedula
+        return 'documentos_requeridos', cedula
+    
+    # ============================================================
+    # 4. PORTAL / REGISTRO
+    # ============================================================
+    if any(p in t for p in ['portal', 'proveedores', 'registro', 'registrarme', 'inscribirme', 'plataforma']):
+        if any(p in t for p in ['sede', 'regimen', 'tratamiento', 'codigo postal', 'campo']):
+            return 'llenar_plataforma', cedula
+        return 'portal_proveedores', cedula
+    
+    # ============================================================
+    # 5. EXAMEN MÉDICO
+    # ============================================================
+    if any(p in t for p in ['examen medico', 'examen ocupacional', 'examen de ingreso']):
+        return 'examen_medico', cedula
+    
+    # ============================================================
+    # 6. CÉDULA (consulta de estado) - AHORA DESPUÉS DE RUT Y DOCS
+    # ============================================================
+    if cedula:
+        return 'consulta_estado', cedula
+    
+    # ============================================================
+    # 7. SALUDOS - AHORA AL FINAL
+    # ============================================================
+    if any(p in t for p in ['hola', 'buenos', 'buenas', 'hi', 'hello', 'ayuda', 'saludos']):
+        return 'saludo', cedula
+    
+    # ... resto del código ...
 
 # ==================== SUBIR EXCEL SIN REDEPLOY ====================
 @app.route('/api/admin/upload-excel', methods=['POST'])
@@ -1264,7 +1275,6 @@ def upload_excel():
 @app.route('/api/admin/test-env', methods=['GET'])
 @admin_required
 def test_env():
-    """Endpoint para verificar variables de entorno en Render"""
     return jsonify({
         'SMTP_USER': os.environ.get('SMTP_USER', 'NO_CONFIGURADO'),
         'SMTP_HOST': os.environ.get('SMTP_HOST', 'NO_CONFIGURADO'),
@@ -1293,6 +1303,3 @@ if __name__ == '__main__':
     print("=" * 50)
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     app.run(debug=debug_mode, port=5000)
-
-
-    

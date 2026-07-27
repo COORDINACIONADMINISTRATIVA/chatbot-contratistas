@@ -6,16 +6,9 @@
     <title>Consultas Frecuentes - Asistente de Contratación UNIMINUTO</title>
     <link rel="stylesheet" href="/static/css/estilos.css">
     <style>
-        .chat-header .bot-avatar {
-            font-size: 2.5em;
-        }
-        .quick-questions li {
-            background: white;
-        }
-        .quick-questions li:hover {
-            background: var(--azul-uniminuto);
-            color: white;
-        }
+        .chat-header .bot-avatar { font-size: 2.5em; }
+        .quick-questions li { background: white; }
+        .quick-questions li:hover { background: var(--azul-uniminuto); color: white; }
         .hero-consultas {
             background: linear-gradient(135deg, var(--azul-uniminuto), #00509e);
             color: white;
@@ -27,116 +20,108 @@
             gap: 20px;
             flex-wrap: wrap;
         }
-        .hero-consultas h2 {
-            color: white;
-            margin: 0;
-            font-size: 1.8em;
-            font-weight: 600;
-        }
-        .hero-consultas p {
-            margin: 0;
-            opacity: 0.9;
-            font-size: 1.1em;
-        }
-        .hero-consultas .icon-grande {
-            font-size: 3em;
-        }
-        @media (max-width: 768px) {
-            .hero-consultas {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
+        .hero-consultas h2 { color: white; margin: 0; font-size: 1.8em; font-weight: 600; }
+        .hero-consultas p { margin: 0; opacity: 0.9; font-size: 1.1em; }
+        .hero-consultas .icon-grande { font-size: 3em; }
+        .message-content { white-space: pre-wrap; word-wrap: break-word; }
+        .chat-box { flex: 1; overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 12px; padding: 20px; background: var(--bg-chat); }
+        .chat-input-container { display: flex; gap: 10px; padding: 15px 20px; background: var(--bg-card); border-top: 1px solid var(--border-color); flex-shrink: 0; align-items: flex-end; }
+        #user-input { flex: 1; padding: 12px 18px; border: 2px solid #e0e8f2; border-radius: 30px; outline: none; font-size: 1em; min-height: 45px; max-height: 120px; resize: none; overflow-y: auto; box-sizing: border-box; font-family: inherit; background: var(--bg-input); color: var(--text-color); }
+        #user-input:focus { border-color: var(--azul-uniminuto); }
+        #send-btn { padding: 12px 28px; background: var(--azul-uniminuto); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: 600; flex-shrink: 0; height: 45px; }
+        #send-btn:hover { background: var(--azul-claro); }
+        @media (max-width: 768px) { .hero-consultas { flex-direction: column; text-align: center; } }
     </style>
 </head>
 <body>
-    <!-- HEADER -->
     <header class="header">
         <div class="header-content">
-            <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">
-    🌙
-</button>
+            <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">🌙</button>
             <div class="header-left">
                 <img src="/static/images/logo2.png" alt="UNIMINUTO" class="header-logo">
                 <div>
-                    <h1>📚 Centro de Consultas</h1>
-                    <p>Resuelve tus dudas sobre el proceso de contratación</p>
+                    <h1>📚 Preguntas Frecuentes</h1>
+                    <p>Resuelva sus dudas sobre el proceso de contratación</p>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- TABS DE NAVEGACIÓN -->
     <nav class="tabs">
         <div class="tabs-container">
-            <a href="/" class="tab"><span class="tab-icon">🔍</span><span>Mi Proceso</span></a>
-            <a href="/consultas" class="tab active"><span class="tab-icon">📚</span><span>Consultas</span></a>
+            <a href="/" class="tab"><span class="tab-icon">🔍</span><span>Consultar mi estado</span></a>
+            <a href="/consultas" class="tab active"><span class="tab-icon">📚</span><span>Preguntas Frecuentes</span></a>
             <a href="/login" class="tab tab-admin"><span class="tab-icon">⚙️</span><span>Admin</span></a>
         </div>
     </nav>
 
-    <!-- CONTENIDO -->
     <div class="container">
         <div class="hero-consultas">
             <span class="icon-grande">💬</span>
             <div>
-                <h2>Preguntas Frecuentes</h2>
-                <p>Aquí puedes preguntar sobre el proceso de contratación en general. <br>Selecciona un tema del menú lateral o escribe tu pregunta directamente.</p>
+                <h2>Centro de Consultas</h2>
+                <p>Aquí puede preguntar sobre el proceso de contratación en general.<br>Seleccione un tema del menú lateral o escriba su pregunta directamente.</p>
                 <p style="font-size: 0.9em; margin-top: 8px; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; display: inline-block;">
-                    ⚠️ Esta sección NO consulta cédulas. Ve a "Mi Proceso" para tu estado personal.
+                    ⚠️ Esta sección NO consulta cédulas. Vaya a "Consultar mi estado" para conocer su estado personal.
                 </p>
             </div>
         </div>
 
         <div class="main-content">
-            <!-- SIDEBAR -->
             <aside class="sidebar">
                 <h3>💡 Temas disponibles</h3>
                 <ul class="quick-questions">
                     <li onclick="enviarPregunta('qué documentos necesito')">📋 Documentos</li>
                     <li onclick="enviarPregunta('cómo me registro en el portal de proveedores')">🌐 Portal</li>
                     <li onclick="enviarPregunta('tengo problemas con el portal')">⚠️ Problemas</li>
-                    <li onclick="enviarPregunta('estado de mis pagos')">💰 Pagos</li>
                     <li onclick="enviarPregunta('cómo actualizo mi RUT')">📝 RUT</li>
                     <li onclick="enviarPregunta('cómo lleno la plataforma')">🔧 Llenar plataforma</li>
                 </ul>
                 <div class="info-box">
                     <h4>ℹ️ Información general</h4>
-                    <p>Las respuestas son automáticas basadas en nuestra base de conocimiento. Para dudas específicas de tu caso, contacta a tu supervisor.</p>
+                    <p>Las respuestas son automáticas basadas en nuestra base de conocimiento. Para dudas específicas de su caso, contacte a su supervisor.</p>
+                    <p style="margin-top: 8px; font-size: 0.85em; color: #4a5a6e;">Este asistente está diseñado para brindar orientación general sobre el proceso de contratación en UNIMINUTO Virtual.</p>
                 </div>
             </aside>
 
-            <!-- CHAT -->
             <section class="chat-container">
                 <div class="chat-header">
                     <div class="bot-avatar">📚</div>
                     <div>
-                        <h2>Asistente de Consultas</h2>
+                        <h2>Chatbot de apoyo en contratación</h2>
                         <span class="status">● En línea</span>
                     </div>
                 </div>
 
-                <div id="chat-box" class="chat-box">
+                <div class="chat-box" id="chat-box">
                     <div class="message bot-message">
-                        <div class="message-content">¡Hola! 👋 Bienvenido al centro de consultas.
+                        <div class="message-content">
+¡Bienvenido! 👋 Soy el asistente de apoyo en contratación de UNIMINUTO Virtual.
 
-Aquí puedes preguntar sobre el proceso de contratación en general. Selecciona un tema del menú lateral o escribe tu pregunta.
+Estoy aquí para ayudarle con todo el proceso de contratación. Puedo orientarle sobre:
 
-⚠️ Importante: En esta sección NO consulto cédulas. Si quieres ver tu estado, ve a "Mi Proceso".</div>
+📋 Documentos que debe enviar según su tipo de contratación.
+🌐 Cómo registrarse en el portal de proveedores de UNIMINUTO.
+🔧 Cómo diligenciar correctamente el formulario de registro.
+⚠️ Problemas comunes con el registro y cómo solucionarlos.
+📝 Actualización del RUT, marcas de agua y actividad económica recomendada.
+
+💡 Si necesita consultar su estado, vaya a "Consultar mi estado" e ingrese su cédula.
+
+¿En qué puedo ayudarle hoy?
+                        </div>
                         <span class="message-time">Ahora</span>
                     </div>
                 </div>
 
                 <div class="chat-input-container">
-                    <input type="text" id="user-input" placeholder="Escribe tu pregunta..." 
-                           onkeypress="if(event.key==='Enter') enviarPregunta()">
+                    <input type="text" id="user-input" placeholder="Escriba su pregunta..." onkeypress="if(event.key==='Enter') enviarPregunta()">
                     <button onclick="enviarPregunta()" id="send-btn">Preguntar</button>
                 </div>
             </section>
         </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-logo">
@@ -161,16 +146,11 @@ Aquí puedes preguntar sobre el proceso de contratación en general. Selecciona 
 
         function agregarMensaje(texto, tipo) {
             const chatBox = document.getElementById('chat-box');
+            if (!chatBox) return;
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${tipo}-message`;
-            
             const time = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-            
-            messageDiv.innerHTML = `
-                <div class="message-content">${texto.replace(/\n/g, '<br>')}</div>
-                <span class="message-time">${time}</span>
-            `;
-            
+            messageDiv.innerHTML = `<div class="message-content">${texto.replace(/\n/g, '<br>')}</div><span class="message-time">${time}</span>`;
             chatBox.appendChild(messageDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
@@ -178,29 +158,20 @@ Aquí puedes preguntar sobre el proceso de contratación en general. Selecciona 
         async function enviarPregunta(pregunta = null) {
             const input = document.getElementById('user-input');
             const mensaje = pregunta || input.value.trim();
-            
             if (!mensaje) return;
-            
             agregarMensaje(mensaje, 'user');
             if (!pregunta) input.value = '';
-            
-            // Detectar si es una cédula
-            const cedulaPattern = /\b\d{6,12}\b/;
-            if (cedulaPattern.test(mensaje)) {
-                agregarMensaje(
-                    '⚠️ En esta sección NO se consultan cédulas.\n\n' +
-                    'Para ver el estado de tu proceso, ve a la pestaña "Mi Proceso" e ingresa tu cédula allí.\n\n' +
-                    'Aquí solo puedo responder preguntas generales sobre el proceso de contratación.',
-                    'bot'
-                );
+
+            if (/\b\d{6,12}\b/.test(mensaje)) {
+                agregarMensaje('⚠️ En esta sección NO se consultan cédulas.\n\nPara ver el estado de su proceso, vaya a la pestaña "Consultar mi estado" e ingrese su cédula allí.\n\nAquí solo puedo responder preguntas generales sobre el proceso de contratación.', 'bot');
                 return;
             }
-            
+
             const typing = document.createElement('div');
             typing.className = 'message bot-message';
             typing.innerHTML = '<div class="message-content">⏳ Escribiendo...</div>';
             document.getElementById('chat-box').appendChild(typing);
-            
+
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -212,34 +183,24 @@ Aquí puedes preguntar sobre el proceso de contratación en general. Selecciona 
                 agregarMensaje(data.respuesta, 'bot');
             } catch (error) {
                 typing.remove();
-                agregarMensaje('❌ Error de conexión', 'bot');
+                agregarMensaje('❌ Error de conexión. Verifique que el servidor esté corriendo.', 'bot');
             }
         }
-
-        function enviarPreguntaRapida(pregunta) {
-            enviarPregunta(pregunta);
-        }
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('themeToggle');
+            if (toggle) {
+                const darkMode = localStorage.getItem('darkMode') === 'true';
+                if (darkMode) { document.body.classList.add('dark-mode'); toggle.textContent = '☀️'; }
+                toggle.addEventListener('click', function() {
+                    document.body.classList.toggle('dark-mode');
+                    const isDark = document.body.classList.contains('dark-mode');
+                    localStorage.setItem('darkMode', isDark);
+                    toggle.textContent = isDark ? '☀️' : '🌙';
+                });
+            }
+        });
     </script>
 </body>
-<script>
-    // ===== MODO OSCURO =====
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggle = document.getElementById('themeToggle');
-        if (!toggle) return;
-
-        // Cargar preferencia guardada
-        const darkMode = localStorage.getItem('darkMode') === 'true';
-        if (darkMode) {
-            document.body.classList.add('dark-mode');
-            toggle.textContent = '☀️';
-        }
-
-        toggle.addEventListener('click', function() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark);
-            toggle.textContent = isDark ? '☀️' : '🌙';
-        });
-    });
-</script>
 </html>
