@@ -1370,6 +1370,7 @@ tr:hover {
         gap: 8px;
     }
 }
+<<<<<<< HEAD
 /* ===== CORRECIONES PARA EL CHAT ===== */
 
 .chat-container {
@@ -1512,4 +1513,16 @@ body.dark-mode .message-content {
 body.dark-mode .bot-message .message-content {
     background: #2a2a2a;
     border-color: #444;
+=======
+/* ===== CORRECCIONES FINALES PARA EL CHAT ===== */
+.message-content {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+}
+#user-input {
+    max-height: 120px !important;
+    resize: none !important;
+    overflow-y: auto !important;
+>>>>>>> 391ac66 (29/07/2026)
 }

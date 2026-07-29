@@ -47,7 +47,7 @@ def limpiar_fecha(fecha):
         if re.search(r'\d{2}/\d{2}/\d{4}', fecha):
             return fecha
     
-    # Si es datetime o timestamp, convertirlo
+    # Si es datetime o timestamp, convertirirlo
     try:
         if isinstance(fecha, datetime):
             return fecha.strftime('%d/%m/%Y')
@@ -455,7 +455,11 @@ def enviar_correos_sin_filtro():
     
     if len(destinatarios) > 500:
         return jsonify({'success': False, 'error': 'Demasiados destinatarios (máximo 500)'}), 400
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 391ac66 (29/07/2026)
     PLANTILLA_CON_REGISTRO = """
     Buen día,
 

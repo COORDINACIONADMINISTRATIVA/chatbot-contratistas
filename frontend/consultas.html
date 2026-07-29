@@ -7,8 +7,11 @@
     <link rel="stylesheet" href="/static/css/estilos.css">
     <style>
         .chat-header .bot-avatar { font-size: 2.5em; }
+<<<<<<< HEAD
         .quick-questions li { background: white; }
         .quick-questions li:hover { background: var(--azul-uniminuto); color: white; }
+=======
+>>>>>>> 391ac66 (29/07/2026)
         .hero-consultas {
             background: linear-gradient(135deg, var(--azul-uniminuto), #00509e);
             color: white;
@@ -28,9 +31,55 @@
         .chat-input-container { display: flex; gap: 10px; padding: 15px 20px; background: var(--bg-card); border-top: 1px solid var(--border-color); flex-shrink: 0; align-items: flex-end; }
         #user-input { flex: 1; padding: 12px 18px; border: 2px solid #e0e8f2; border-radius: 30px; outline: none; font-size: 1em; min-height: 45px; max-height: 120px; resize: none; overflow-y: auto; box-sizing: border-box; font-family: inherit; background: var(--bg-input); color: var(--text-color); }
         #user-input:focus { border-color: var(--azul-uniminuto); }
+<<<<<<< HEAD
         #send-btn { padding: 12px 28px; background: var(--azul-uniminuto); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: 600; flex-shrink: 0; height: 45px; }
         #send-btn:hover { background: var(--azul-claro); }
         @media (max-width: 768px) { .hero-consultas { flex-direction: column; text-align: center; } }
+=======
+        #user-input::placeholder { color: #999; font-size: 0.95em; }
+        #send-btn { padding: 12px 28px; background: var(--azul-uniminuto); color: white; border: none; border-radius: 30px; cursor: pointer; font-weight: 600; flex-shrink: 0; height: 45px; transition: background 0.2s; }
+        #send-btn:hover { background: var(--azul-claro); }
+        #send-btn:active { transform: scale(0.95); }
+        #send-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 10px 16px;
+            background: var(--bg-card);
+            border-radius: 18px;
+            align-self: flex-start;
+            border: 1px solid var(--border-color);
+        }
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            animation: typing 1.4s infinite both;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-8px); opacity: 1; }
+        }
+        @media (max-width: 768px) {
+            .hero-consultas { flex-direction: column; text-align: center; }
+            .chat-container { height: calc(100vh - 250px); min-height: 400px; }
+            .message-content { font-size: 0.9em; }
+            #user-input { font-size: 0.9em; min-height: 38px; max-height: 80px; padding: 10px 14px; }
+            #send-btn { padding: 10px 18px; font-size: 0.9em; height: 38px; }
+        }
+        @media (max-width: 480px) {
+            .chat-container { height: calc(100vh - 200px); min-height: 350px; }
+            .chat-box { padding: 12px; }
+            .message { max-width: 95%; }
+            .message-content { padding: 10px 14px; font-size: 0.85em; }
+            .chat-input-container { padding: 10px; gap: 8px; }
+            #user-input { padding: 8px 12px; min-height: 34px; max-height: 60px; font-size: 0.85em; border-radius: 20px; }
+            #send-btn { padding: 8px 14px; font-size: 0.85em; height: 34px; border-radius: 20px; }
+        }
+>>>>>>> 391ac66 (29/07/2026)
     </style>
 </head>
 <body>
@@ -60,13 +109,18 @@
             <span class="icon-grande">💬</span>
             <div>
                 <h2>Centro de Consultas</h2>
+<<<<<<< HEAD
                 <p>Aquí puede preguntar sobre el proceso de contratación en general.<br>Seleccione un tema del menú lateral o escriba su pregunta directamente.</p>
+=======
+                <p>Aquí puede preguntar sobre el proceso de contratación en general.<br>Escriba su pregunta directamente o use los números del menú.</p>
+>>>>>>> 391ac66 (29/07/2026)
                 <p style="font-size: 0.9em; margin-top: 8px; background: rgba(255,255,255,0.15); padding: 6px 14px; border-radius: 20px; display: inline-block;">
                     ⚠️ Esta sección NO consulta cédulas. Vaya a "Consultar mi estado" para conocer su estado personal.
                 </p>
             </div>
         </div>
 
+<<<<<<< HEAD
         <div class="main-content">
             <aside class="sidebar">
                 <h3>💡 Temas disponibles</h3>
@@ -81,9 +135,19 @@
                     <h4>ℹ️ Información general</h4>
                     <p>Las respuestas son automáticas basadas en nuestra base de conocimiento. Para dudas específicas de su caso, contacte a su supervisor.</p>
                     <p style="margin-top: 8px; font-size: 0.85em; color: #4a5a6e;">Este asistente está diseñado para brindar orientación general sobre el proceso de contratación en UNIMINUTO Virtual.</p>
+=======
+        <!-- CHAT (sin sidebar, ocupa todo el ancho) -->
+        <section class="chat-container">
+            <div class="chat-header">
+                <div class="bot-avatar">📚</div>
+                <div>
+                    <h2>Chatbot de apoyo en contratación</h2>
+                    <span class="status">● En línea</span>
+>>>>>>> 391ac66 (29/07/2026)
                 </div>
-            </aside>
+            </div>
 
+<<<<<<< HEAD
             <section class="chat-container">
                 <div class="chat-header">
                     <div class="bot-avatar">📚</div>
@@ -120,6 +184,18 @@ Estoy aquí para ayudarle con todo el proceso de contratación. Puedo orientarle
                 </div>
             </section>
         </div>
+=======
+            <div class="chat-box" id="chat-box">
+                <!-- Los mensajes se insertan desde JavaScript -->
+            </div>
+
+            <div class="chat-input-container">
+                <input type="text" id="user-input" placeholder="Escriba su pregunta..." 
+                       onkeypress="if(event.key==='Enter') enviarPregunta()">
+                <button onclick="enviarPregunta()" id="send-btn">Preguntar</button>
+            </div>
+        </section>
+>>>>>>> 391ac66 (29/07/2026)
     </div>
 
     <footer class="footer">
@@ -143,6 +219,21 @@ Estoy aquí para ayudarle con todo el proceso de contratación. Puedo orientarle
         const BASE_URL = window.location.origin;
         const API_URL = BASE_URL + '/api/chat';
         let usuarioId = 'consulta_' + Math.random().toString(36).substr(2, 9);
+        let esperandoRespuesta = false;
+
+        const mensajeBienvenida = `👋 ¡Hola! Soy el asistente de contratación de UNIMINUTO Virtual.
+
+Puedo ayudarte con los siguientes temas:
+
+📋 1. Documentos requeridos
+🌐 2. Registro en el portal de proveedores
+📝 3. Actualización del RUT
+🏥 4. ARL (Afiliación y certificación)
+🏥 5. Examen médico ocupacional
+📊 6. Estado de tu proceso
+
+📌 Escribe el número del tema o el nombre para comenzar.
+`;
 
         function agregarMensaje(texto, tipo) {
             const chatBox = document.getElementById('chat-box');
@@ -150,19 +241,49 @@ Estoy aquí para ayudarle con todo el proceso de contratación. Puedo orientarle
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${tipo}-message`;
             const time = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
+<<<<<<< HEAD
             messageDiv.innerHTML = `<div class="message-content">${texto.replace(/\n/g, '<br>')}</div><span class="message-time">${time}</span>`;
+=======
+            const textoLimpio = texto.replace(/^\s+/, '');
+            messageDiv.innerHTML = `
+                <div class="message-content">${textoLimpio.replace(/\n/g, '<br>')}</div>
+                <span class="message-time">${time}</span>
+            `;
+>>>>>>> 391ac66 (29/07/2026)
             chatBox.appendChild(messageDiv);
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
+        function mostrarTyping() {
+            const chatBox = document.getElementById('chat-box');
+            if (!chatBox) return;
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'typing-indicator';
+            typingDiv.id = 'typing-indicator';
+            typingDiv.innerHTML = `<span></span><span></span><span></span>`;
+            chatBox.appendChild(typingDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function ocultarTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
         async function enviarPregunta(pregunta = null) {
+            if (esperandoRespuesta) return;
             const input = document.getElementById('user-input');
             const mensaje = pregunta || input.value.trim();
             if (!mensaje) return;
+<<<<<<< HEAD
+=======
+
+>>>>>>> 391ac66 (29/07/2026)
             agregarMensaje(mensaje, 'user');
             if (!pregunta) input.value = '';
 
             if (/\b\d{6,12}\b/.test(mensaje)) {
+<<<<<<< HEAD
                 agregarMensaje('⚠️ En esta sección NO se consultan cédulas.\n\nPara ver el estado de su proceso, vaya a la pestaña "Consultar mi estado" e ingrese su cédula allí.\n\nAquí solo puedo responder preguntas generales sobre el proceso de contratación.', 'bot');
                 return;
             }
@@ -171,6 +292,18 @@ Estoy aquí para ayudarle con todo el proceso de contratación. Puedo orientarle
             typing.className = 'message bot-message';
             typing.innerHTML = '<div class="message-content">⏳ Escribiendo...</div>';
             document.getElementById('chat-box').appendChild(typing);
+=======
+                agregarMensaje(
+                    '⚠️ En esta sección NO se consultan cédulas.\n\nPara ver el estado de su proceso, vaya a la pestaña "Consultar mi estado" e ingrese su cédula allí.\n\nAquí solo puedo responder preguntas generales sobre el proceso de contratación.',
+                    'bot'
+                );
+                return;
+            }
+
+            esperandoRespuesta = true;
+            document.getElementById('send-btn').disabled = true;
+            mostrarTyping();
+>>>>>>> 391ac66 (29/07/2026)
 
             try {
                 const response = await fetch(API_URL, {
@@ -178,10 +311,16 @@ Estoy aquí para ayudarle con todo el proceso de contratación. Puedo orientarle
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ mensaje, usuario: usuarioId })
                 });
+                ocultarTyping();
+                if (!response.ok) throw new Error(`Error ${response.status}`);
                 const data = await response.json();
-                typing.remove();
-                agregarMensaje(data.respuesta, 'bot');
+                if (data.error) {
+                    agregarMensaje(`❌ ${data.error}`, 'bot');
+                } else {
+                    agregarMensaje(data.respuesta, 'bot');
+                }
             } catch (error) {
+<<<<<<< HEAD
                 typing.remove();
                 agregarMensaje('❌ Error de conexión. Verifique que el servidor esté corriendo.', 'bot');
             }
@@ -189,6 +328,19 @@ Estoy aquí para ayudarle con todo el proceso de contratación. Puedo orientarle
     </script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+=======
+                ocultarTyping();
+                agregarMensaje(`❌ Error de conexión: ${error.message}`, 'bot');
+            } finally {
+                esperandoRespuesta = false;
+                document.getElementById('send-btn').disabled = false;
+                input.focus();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            agregarMensaje(mensajeBienvenida, 'bot');
+>>>>>>> 391ac66 (29/07/2026)
             const toggle = document.getElementById('themeToggle');
             if (toggle) {
                 const darkMode = localStorage.getItem('darkMode') === 'true';
@@ -200,6 +352,10 @@ Estoy aquí para ayudarle con todo el proceso de contratación. Puedo orientarle
                     toggle.textContent = isDark ? '☀️' : '🌙';
                 });
             }
+<<<<<<< HEAD
+=======
+            document.getElementById('user-input').focus();
+>>>>>>> 391ac66 (29/07/2026)
         });
     </script>
 </body>
