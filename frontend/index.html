@@ -6,230 +6,76 @@
     <title>Consultar mi estado - Asistente de Contratación UNIMINUTO</title>
     <link rel="stylesheet" href="/static/css/estilos.css">
     <style>
-        /* Estilos específicos para index */
-        .hero-icon {
-            font-size: 2.4em;
-            margin-right: 10px;
-        }
-        .upload-area {
-            border: 2px dashed #d0d8e3;
-            border-radius: 16px;
-            padding: 30px;
-            text-align: center;
-            background: #fafcff;
-            transition: all 0.3s;
-            cursor: pointer;
-        }
-        .upload-area.dragover {
-            border-color: var(--azul-brillante);
-            background: #eef6ff;
-        }
-        .upload-area .btn-upload {
-            background: var(--azul-uniminuto);
-            color: white;
-            padding: 14px 32px;
-            border: none;
-            border-radius: 30px;
-            font-weight: 600;
-            font-size: 1em;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-        .upload-area .btn-upload:hover {
-            background: var(--azul-claro);
-        }
-        .upload-area .btn-upload:disabled {
-            background: #9aabbe;
-            cursor: not-allowed;
-        }
-        .upload-status {
-            display: block;
-            margin-top: 12px;
-            font-size: 0.9em;
-            color: #6a7a8e;
-        }
-        .upload-status.success { color: #28a745; }
-        .upload-status.error { color: #dc3545; }
-        .upload-status.loading { color: var(--azul-brillante); }
-        #resultado-rut {
-            margin-top: 20px;
-            padding: 20px;
-            border-radius: 12px;
-            background: #f0f7ff;
-            border-left: 6px solid var(--azul-brillante);
-            white-space: pre-wrap;
-            line-height: 1.7;
-            display: none;
-        }
-        #resultado-rut.show { display: block; }
-        .separador {
-            border: none;
-            border-top: 2px dashed #dce1e8;
-            margin: 35px 0;
-        }
-        .card-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        .card-header h2 {
-            margin-bottom: 0;
-        }
-        .cedula-input-group {
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-            align-items: center;
-        }
+        .hero-icon { font-size: 2.4em; margin-right: 10px; }
+        .cedula-input-group { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
         .cedula-input-group input {
-            flex: 1;
-            min-width: 220px;
-            padding: 14px 20px;
-            border: 2px solid #e0e8f2;
-            border-radius: 30px;
-            font-size: 1em;
+            flex: 1; min-width: 220px; padding: 14px 20px;
+            border: 2px solid #e0e8f2; border-radius: 30px; font-size: 1em;
         }
-        .cedula-input-group input:focus {
-            border-color: var(--azul-uniminuto);
-            outline: none;
-        }
+        .cedula-input-group input:focus { border-color: var(--azul-uniminuto); outline: none; }
         .cedula-input-group button {
-            padding: 14px 32px;
-            background: var(--azul-uniminuto);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
+            padding: 14px 32px; background: var(--azul-uniminuto); color: white;
+            border: none; border-radius: 30px; font-weight: 600; cursor: pointer;
         }
-        .cedula-input-group button:hover {
-            background: var(--azul-claro);
-        }
-        .subseccion-desc {
-            color: #5a6a7e;
-            font-size: 0.95em;
-            margin-bottom: 18px;
-        }
+        .cedula-input-group button:hover { background: var(--azul-claro); }
+        .subseccion-desc { color: #5a6a7e; font-size: 0.95em; margin-bottom: 18px; }
         .contrato-card {
-            background: white;
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: var(--sombra);
-            margin-bottom: 20px;
+            background: white; border-radius: 16px; padding: 25px;
+            box-shadow: var(--sombra); margin-bottom: 20px;
             border-left: 6px solid var(--azul-uniminuto);
         }
-        .contrato-card h2 {
-            color: var(--azul-uniminuto);
-            margin-bottom: 15px;
-        }
+        .contrato-card h2 { color: var(--azul-uniminuto); margin-bottom: 15px; }
         .info-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px; margin-bottom: 20px;
         }
         .info-item {
-            background: #f8faff;
-            padding: 12px;
-            border-radius: 10px;
+            background: #f8faff; padding: 12px; border-radius: 10px;
         }
         .info-item strong {
-            display: block;
-            color: var(--azul-uniminuto);
-            font-size: 0.8em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+            display: block; color: var(--azul-uniminuto);
+            font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px;
         }
         .estado-box {
-            background: #fff7ed;
-            border-left: 4px solid #fd7e14;
-            padding: 15px;
-            border-radius: 10px;
-            margin: 15px 0;
+            background: #fff7ed; border-left: 4px solid #fd7e14;
+            padding: 15px; border-radius: 10px; margin: 15px 0;
         }
-        .estado-box strong {
-            color: #fd7e14;
-        }
+        .estado-box strong { color: #fd7e14; }
         .historial-box {
-            background: #f0f7ff;
-            border-left: 4px solid var(--azul-brillante);
-            padding: 20px;
-            border-radius: 10px;
-            margin: 15px 0;
-            line-height: 1.7;
-            white-space: pre-wrap;
+            background: #f0f7ff; border-left: 4px solid var(--azul-brillante);
+            padding: 20px; border-radius: 10px; margin: 15px 0;
+            line-height: 1.7; white-space: pre-wrap;
         }
-        .historial-box strong {
-            color: var(--azul-uniminuto);
-        }
-        .upload-hint {
-            font-size: 0.85em;
-            color: #8a9aaa;
-            margin: 10px 0;
-        }
+        .historial-box strong { color: var(--azul-uniminuto); }
         .pagos-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 10px;
-            font-size: 0.9em;
+            width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em;
         }
         .pagos-table th {
-            background: var(--azul-uniminuto);
-            color: white;
-            padding: 8px 10px;
-            text-align: left;
+            background: var(--azul-uniminuto); color: white;
+            padding: 8px 10px; text-align: left;
         }
         .pagos-table td {
-            padding: 8px 10px;
-            border-bottom: 1px solid #eef2f7;
+            padding: 8px 10px; border-bottom: 1px solid #eef2f7;
         }
-        .pagos-table tr.eliminado {
-            background: #f8f0f0;
-            opacity: 0.7;
-        }
+        .pagos-table tr.eliminado { background: #f8f0f0; opacity: 0.7; }
         .badge-estado {
-            display: inline-block;
-            padding: 2px 10px;
-            border-radius: 12px;
-            font-size: 0.75em;
-            font-weight: 600;
+            display: inline-block; padding: 2px 10px;
+            border-radius: 12px; font-size: 0.75em; font-weight: 600;
         }
-        .badge-eliminado {
-            background: #f8d7da;
-            color: #721c24;
-        }
-        .badge-activo {
-            background: #d4edda;
-            color: #155724;
-        }
+        .badge-eliminado { background: #f8d7da; color: #721c24; }
+        .badge-activo { background: #d4edda; color: #155724; }
         @media (max-width: 768px) {
-            .cedula-input-group {
-                flex-direction: column;
-            }
-            .cedula-input-group input, 
-            .cedula-input-group button {
-                width: 100%;
-            }
-            .upload-area {
-                padding: 20px;
-            }
-            .pagos-table {
-                font-size: 0.8em;
-            }
-            .pagos-table th, .pagos-table td {
-                padding: 5px;
-            }
+            .cedula-input-group { flex-direction: column; }
+            .cedula-input-group input, .cedula-input-group button { width: 100%; }
+            .pagos-table { font-size: 0.8em; }
+            .pagos-table th, .pagos-table td { padding: 5px; }
         }
     </style>
 </head>
 <body>
-    <!-- HEADER -->
     <header class="header">
         <div class="header-content">
-            <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">
-                🌙
-            </button>
+            <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">🌙</button>
             <div class="header-left">
                 <img src="/static/images/logo2.png" alt="UNIMINUTO" class="header-logo">
                 <div>
@@ -240,19 +86,16 @@
         </div>
     </header>
 
-    <!-- TABS DE NAVEGACIÓN -->
     <nav class="tabs">
         <div class="tabs-container">
             <a href="/" class="tab active"><span class="tab-icon">🔍</span><span>Consultar mi estado</span></a>
             <a href="/consultas" class="tab"><span class="tab-icon">📚</span><span>Preguntas Frecuentes</span></a>
+            <a href="/rut" class="tab"><span class="tab-icon">📄</span><span>Validador de RUT</span></a>
             <a href="/login" class="tab tab-admin"><span class="tab-icon">⚙️</span><span>Admin</span></a>
         </div>
     </nav>
 
-    <!-- CONTENIDO -->
     <div class="container">
-        
-        <!-- SECCIÓN 1: CONSULTAR CÉDULA (INDEPENDIENTE) -->
         <div class="card">
             <div class="card-header">
                 <span class="hero-icon">📋</span>
@@ -270,47 +113,9 @@
             </div>
         </div>
 
-        <!-- RESULTADO DE CONSULTA -->
         <div id="resultado"></div>
-
-        <hr class="separador">
-
-        <!-- SECCIÓN 2: VALIDAR RUT (100% INDEPENDIENTE) -->
-        <div class="card">
-            <div class="card-header">
-                <span class="hero-icon">📄</span>
-                <h2>Validador de RUT</h2>
-            </div>
-            <p class="subseccion-desc">
-                En este espacio puede subir su RUT en formato PDF para verificar de una primer instancia si cumple con los requisitos mínimos exigidos por UNIMINUTO.
-            </p>
-            
-            <div class="upload-area" id="upload-area">
-                <div style="width: 100%; max-width: 450px; margin: 0 auto;">
-                    <label style="display: block; font-weight: 500; margin-bottom: 6px; color: #3a4a5e;">
-                        📝 Cédula del RUT (opcional):
-                    </label>
-                    <input type="text" id="cedula-rut" placeholder="Ej: 1234567890" 
-                           style="width: 100%; padding: 12px 18px; border: 2px solid #e0e8f2; border-radius: 30px; font-size: 0.95em; margin-bottom: 14px;">
-                    <p class="upload-hint">
-                        Si deja este campo vacío, solo se mostrarán los datos extraídos del PDF sin verificar contra una cédula.
-                    </p>
-                </div>
-                
-                <input type="file" id="rut-file" accept=".pdf" style="display:none;" onchange="subirRut()">
-                <button class="btn-upload" id="btn-upload-rut" onclick="document.getElementById('rut-file').click()">
-                    📤 Seleccionar RUT (PDF)
-                </button>
-                <span class="upload-status" id="upload-status">Archivo seleccionado: Ninguno</span>
-                <p class="upload-hint" style="margin-top: 8px;">💡 También puede arrastrar y soltar su archivo PDF aquí.</p>
-            </div>
-
-            <!-- Resultado del análisis del RUT -->
-            <div id="resultado-rut"></div>
-        </div>
     </div>
 
-    <!-- FOOTER -->
     <footer class="footer">
         <div class="footer-content">
             <div class="footer-logo">
@@ -329,9 +134,6 @@
     </footer>
 
     <script>
-        // ================================================================
-        // SECCIÓN 1: CONSULTAR CÉDULA (NO guarda nada en localStorage)
-        // ================================================================
         async function buscarCedula() {
             const input = document.getElementById('cedula-consulta');
             const cedula = input.value.trim();
@@ -364,15 +166,12 @@
                 }
                 
                 let html = '';
-                
                 if (data.cantidad > 1) {
                     html += '<div class="alert alert-info">📋 Tiene <strong>' + data.cantidad + '</strong> registros asociados.</div>';
                 }
                 
-                // Procesar cada contratista
                 data.contratistas.forEach((c, index) => {
                     if (c.tipo === 'resumen') {
-                        // Contrato resumen (Excel principal)
                         const numContrato = data.cantidad > 1 ? '<div class="alert alert-warning"><strong>📄 CONTRATO #' + (index + 1) + '</strong></div>' : '';
                         html += '<div class="contrato-card">';
                         html += numContrato;
@@ -386,7 +185,6 @@
                         html += '<div class="historial-box">' + (c.observacion || '📋 No hay información adicional registrada en este momento.') + '</div>';
                         html += '</div>';
                     } else if (c.tipo === 'seguimiento') {
-                        // Detalle de pagos (Excel de seguimiento)
                         html += '<div class="contrato-card" style="border-left-color: #28a745;">';
                         html += '<h2>📄 Solicitud #' + c.solpedido + '</h2>';
                         html += '<div class="info-row">';
@@ -417,7 +215,6 @@
                             html += '<p>No hay pagos registrados para esta solicitud.</p>';
                         }
                         
-                        // Mostrar observación general del solpedido (si existe)
                         if (c.observacion) {
                             html += '<h3>📝 Observación</h3>';
                             html += '<div class="historial-box">' + c.observacion + '</div>';
@@ -434,175 +231,6 @@
             }
         }
 
-        // ================================================================
-        // SECCIÓN 2: VALIDAR RUT (100% INDEPENDIENTE)
-        // ================================================================
-        function renderDatosRutTabla(datos) {
-            const etiquetas = {
-                tipo_documento: 'Tipo de documento',
-                numero_identificacion: 'Identificación',
-                tipo_contribuyente: 'Tipo de contribuyente',
-                nombre_completo: 'Nombre / Razón social',
-                direccion: 'Dirección',
-                correo: 'Correo',
-                telefonos: 'Teléfono(s)',
-                actividades_economicas: 'Actividad(es) económica(s)',
-                responsabilidades_calidades_atributos: 'Responsabilidades',
-                fecha_actualizacion_rut: 'Fecha actualización RUT',
-                fecha_generacion_pdf: 'Fecha generación PDF',
-                marca_agua_detalle: 'Marca de agua'
-            };
-
-            let filas = '';
-            for (const [clave, etiqueta] of Object.entries(etiquetas)) {
-                let valor = datos[clave];
-                if (valor === null || valor === undefined || valor === '') continue;
-
-                if (clave === 'telefonos' && Array.isArray(valor)) {
-                    valor = valor.join(', ');
-                } else if (clave === 'actividades_economicas' && Array.isArray(valor)) {
-                    valor = valor.map(a => `${a.codigo} (inicio: ${a.fecha_inicio})`).join(', ');
-                } else if (clave === 'responsabilidades_calidades_atributos' && Array.isArray(valor)) {
-                    valor = valor.join(', ');
-                }
-
-                filas += `<tr><td style="padding:6px 12px;font-weight:600;white-space:nowrap;">${etiqueta}</td><td style="padding:6px 12px;">${valor}</td></tr>`;
-            }
-
-            if (!filas) return '';
-
-            return `
-                <div style="margin-top:16px;">
-                    <strong>📄 Datos extraídos del RUT:</strong>
-                    <table style="margin-top:8px;border-collapse:collapse;font-size:0.9em;width:100%;">
-                        ${filas}
-                    </table>
-                </div>`;
-        }
-
-        // Drag & Drop
-        const uploadArea = document.getElementById('upload-area');
-        const fileInput = document.getElementById('rut-file');
-
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.classList.add('dragover');
-        });
-
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.classList.remove('dragover');
-        });
-
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.classList.remove('dragover');
-            const files = e.dataTransfer.files;
-            if (files.length > 0) {
-                fileInput.files = files;
-                fileInput.dispatchEvent(new Event('change'));
-            }
-        });
-
-        async function subirRut() {
-            const fileInput = document.getElementById('rut-file');
-            const statusEl = document.getElementById('upload-status');
-            const resultadoRut = document.getElementById('resultado-rut');
-            const btnUpload = document.getElementById('btn-upload-rut');
-            
-            const file = fileInput.files[0];
-            if (!file) {
-                statusEl.textContent = '❌ No seleccionó ningún archivo';
-                statusEl.className = 'upload-status error';
-                return;
-            }
-            
-            // Verificar que sea PDF
-            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
-                statusEl.textContent = '❌ El archivo debe ser PDF';
-                statusEl.className = 'upload-status error';
-                fileInput.value = '';
-                return;
-            }
-            
-            // Verificar tamaño (máximo 10MB)
-            if (file.size > 10 * 1024 * 1024) {
-                statusEl.textContent = '❌ El archivo es demasiado grande (máximo 10 MB)';
-                statusEl.className = 'upload-status error';
-                fileInput.value = '';
-                return;
-            }
-            
-            statusEl.textContent = '⏳ Subiendo y analizando RUT...';
-            statusEl.className = 'upload-status loading';
-            btnUpload.disabled = true;
-            resultadoRut.className = '';
-            resultadoRut.style.display = 'none';
-            
-            // Crear FormData
-            const formData = new FormData();
-            formData.append('rut', file);
-            
-            // Cédula del RUT (independiente)
-            const cedulaRut = document.getElementById('cedula-rut').value.trim();
-            if (cedulaRut) {
-                formData.append('cedula', cedulaRut);
-            }
-            
-            try {
-                const response = await fetch('/api/validar-rut', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const data = await response.json();
-                
-                if (data.error) {
-                    statusEl.textContent = '❌ ' + data.error;
-                    statusEl.className = 'upload-status error';
-                    btnUpload.disabled = false;
-                    return;
-                }
-                
-                resultadoRut.innerHTML = data.respuesta || '✅ RUT analizado correctamente';
-                if (data.datos) {
-                    resultadoRut.innerHTML += renderDatosRutTabla(data.datos);
-                }
-                resultadoRut.className = 'show';
-                resultadoRut.style.display = 'block';
-                
-                if (data.valido) {
-                    statusEl.textContent = '✅ RUT validado correctamente';
-                    statusEl.className = 'upload-status success';
-                    resultadoRut.style.borderLeftColor = '#28a745';
-                } else {
-                    statusEl.textContent = '⚠️ El RUT tiene problemas que corregir';
-                    statusEl.className = 'upload-status error';
-                    resultadoRut.style.borderLeftColor = '#dc3545';
-                }
-                
-            } catch (error) {
-                console.error('Error subiendo RUT:', error);
-                statusEl.textContent = '❌ Error de conexión: ' + error.message;
-                statusEl.className = 'upload-status error';
-            }
-            
-            btnUpload.disabled = false;
-            fileInput.value = '';
-        }
-
-        // Mostrar nombre del archivo seleccionado
-        document.getElementById('rut-file').addEventListener('change', function() {
-            const statusEl = document.getElementById('upload-status');
-            if (this.files.length > 0) {
-                statusEl.textContent = '📄 Archivo seleccionado: ' + this.files[0].name;
-                statusEl.className = 'upload-status';
-            } else {
-                statusEl.textContent = 'Archivo seleccionado: Ninguno';
-                statusEl.className = 'upload-status';
-            }
-        });
-
-        // Enter para consultar cédula (sección 1)
         document.getElementById('cedula-consulta').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -610,37 +238,18 @@
             }
         });
 
-        // Enter para el campo de cédula del RUT (sección 2)
-        document.getElementById('cedula-rut').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                document.getElementById('rut-file').click();
-            }
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('themeToggle');
+            if (!toggle) return;
+            const darkMode = localStorage.getItem('darkMode') === 'true';
+            if (darkMode) { document.body.classList.add('dark-mode'); toggle.textContent = '☀️'; }
+            toggle.addEventListener('click', function() {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                localStorage.setItem('darkMode', isDark);
+                toggle.textContent = isDark ? '☀️' : '🌙';
+            });
         });
-
-        console.log('✅ index.html mejorado - Consulta y validación de RUT 100% independientes, drag & drop activado');
-        console.log('✅ Ahora muestra el detalle de pagos (tipo, mes, objeto, estado)');
     </script>
 </body>
-<script>
-    // ===== MODO OSCURO =====
-    document.addEventListener('DOMContentLoaded', function() {
-        const toggle = document.getElementById('themeToggle');
-        if (!toggle) return;
-
-        // Cargar preferencia guardada
-        const darkMode = localStorage.getItem('darkMode') === 'true';
-        if (darkMode) {
-            document.body.classList.add('dark-mode');
-            toggle.textContent = '☀️';
-        }
-
-        toggle.addEventListener('click', function() {
-            document.body.classList.toggle('dark-mode');
-            const isDark = document.body.classList.contains('dark-mode');
-            localStorage.setItem('darkMode', isDark);
-            toggle.textContent = isDark ? '☀️' : '🌙';
-        });
-    });
-</script>
 </html>

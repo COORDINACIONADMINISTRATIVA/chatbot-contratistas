@@ -47,7 +47,7 @@ def limpiar_fecha(fecha):
         if re.search(r'\d{2}/\d{2}/\d{4}', fecha):
             return fecha
     
-    # Si es datetime o timestamp, convertirirlo
+    # Si es datetime o timestamp, convertirlo
     try:
         if isinstance(fecha, datetime):
             return fecha.strftime('%d/%m/%Y')
@@ -127,7 +127,7 @@ logging.basicConfig(
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from database.db import get_connection, init_db
-from contratacion.chatbot_contratista import responder_contratista
+from chatbot.orquestador import responder
 from contratacion.lector import lector
 from contratacion.intérprete import traducir_observacion, traducir_estado
 
@@ -231,6 +231,10 @@ def admin():
 @app.route('/supervisor')
 def supervisor_page():
     return send_from_directory(FRONTEND_DIR, 'supervisor.html')
+
+@app.route('/rut')
+def validador_rut():
+    return send_from_directory(FRONTEND_DIR, 'rut.html')
 
 # ==================== PRUEBA DE CORREO ====================
 @app.route('/api/admin/test-correo', methods=['POST'])
@@ -455,11 +459,7 @@ def enviar_correos_sin_filtro():
     
     if len(destinatarios) > 500:
         return jsonify({'success': False, 'error': 'Demasiados destinatarios (máximo 500)'}), 400
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> 391ac66 (29/07/2026)
     PLANTILLA_CON_REGISTRO = """
     Buen día,
 
@@ -578,7 +578,7 @@ def chat():
     if not pregunta:
         return jsonify({'error': 'Mensaje vacio'}), 400
 
-    respuesta = responder_contratista(pregunta, usuario=usuario)
+    respuesta = responder(pregunta, usuario=usuario)
     intencion = 'contratista'
     confianza = 1.0
     fuente = 'contratista_excel'
@@ -1158,70 +1158,6 @@ def supervisor_dashboard():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
-def detectar_intencion(texto):
-    t = texto.lower()
-    cedula = extraer_cedula(texto)
-    
-    # ============================================================
-    # 1. PRIORIDAD MÁXIMA: RUT (crear, actualizar, subir)
-    # ============================================================
-    if 'rut' in t:
-        # ¿Quiere CREAR/OBTENER por primera vez?
-        if any(p in t for p in ['crear', 'hacer', 'obtener', 'sacar', 'conseguir', 'tramitar', 'solicitar', 'no tengo', 'no he podido']):
-            return 'crear_rut', cedula
-        # ¿Quiere ACTUALIZAR/RENOVAR?
-        if any(p in t for p in ['actualizar', 'renovar', 'actualización', 'cambiar', 'modificar']):
-            return 'actualizar_rut', cedula
-        # ¿Quiere SUBIR/VALIDAR?
-        if any(p in t for p in ['subir', 'validar', 'revisar', 'verificar', 'analizar']):
-            return 'subir_rut', cedula
-        # Por defecto, asumir actualización
-        return 'actualizar_rut', cedula
-    
-    # ============================================================
-    # 2. ARL
-    # ============================================================
-    if any(p in t for p in ['arl', 'afiliarme', 'riesgos laborales']):
-        return 'arl', cedula
-    
-    # ============================================================
-    # 3. DOCUMENTOS (general, natural, juridica)
-    # ============================================================
-    if any(p in t for p in ['documentos', 'papeles', 'requisitos', 'que necesito', 'que me piden']):
-        if 'natural' in t or 'independiente' in t:
-            return 'documentos_natural', cedula
-        if 'empresa' in t or 'juridica' in t or 'jurídica' in t:
-            return 'documentos_juridica', cedula
-        return 'documentos_requeridos', cedula
-    
-    # ============================================================
-    # 4. PORTAL / REGISTRO
-    # ============================================================
-    if any(p in t for p in ['portal', 'proveedores', 'registro', 'registrarme', 'inscribirme', 'plataforma']):
-        if any(p in t for p in ['sede', 'regimen', 'tratamiento', 'codigo postal', 'campo']):
-            return 'llenar_plataforma', cedula
-        return 'portal_proveedores', cedula
-    
-    # ============================================================
-    # 5. EXAMEN MÉDICO
-    # ============================================================
-    if any(p in t for p in ['examen medico', 'examen ocupacional', 'examen de ingreso']):
-        return 'examen_medico', cedula
-    
-    # ============================================================
-    # 6. CÉDULA (consulta de estado) - AHORA DESPUÉS DE RUT Y DOCS
-    # ============================================================
-    if cedula:
-        return 'consulta_estado', cedula
-    
-    # ============================================================
-    # 7. SALUDOS - AHORA AL FINAL
-    # ============================================================
-    if any(p in t for p in ['hola', 'buenos', 'buenas', 'hi', 'hello', 'ayuda', 'saludos']):
-        return 'saludo', cedula
-    
-    # ... resto del código ...
-
 # ==================== SUBIR EXCEL SIN REDEPLOY ====================
 @app.route('/api/admin/upload-excel', methods=['POST'])
 @admin_required
@@ -1304,6 +1240,7 @@ if __name__ == '__main__':
     print("Login:        http://localhost:5000/login")
     print("Admin:        http://localhost:5000/admin")
     print("Supervisor:   http://localhost:5000/supervisor")
+    print("RUT:          http://localhost:5000/rut")
     print("=" * 50)
     debug_mode = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
     app.run(debug=debug_mode, port=5000)

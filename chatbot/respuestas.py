@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-"crear_rut": [
-    """📝 CÓMO OBTENER SU RUT POR PRIMERA VEZ - GUÍA COMPLETA
-=======
 # chatbot/respuestas.py
 """
 Diccionario de respuestas del chatbot.
@@ -13,7 +9,6 @@ RESPUESTAS = {
     # ==================== CREAR RUT ====================
     "crear_rut": [
         """📝 CÓMO OBTENER SU RUT POR PRIMERA VEZ - GUÍA COMPLETA
->>>>>>> 391ac66 (29/07/2026)
 
 Si nunca ha tenido RUT o necesita obtenerlo por primera vez, siga estos pasos:
 
@@ -57,9 +52,6 @@ El RUT (Registro Único Tributario) es el documento que identifica a las persona
 - También puede ir a una oficina de la DIAN para asesoría presencial.
 
 ¿Necesita ayuda con algún paso en particular?"""
-<<<<<<< HEAD
-]
-=======
     ],
 
     # ==================== ACTUALIZAR RUT ====================
@@ -187,6 +179,8 @@ Sí. Todos los contratistas que prestan servicios a UNIMINUTO deben tener ARL ac
 
 💡 CONSEJO:
 Si no tiene ARL, comuníquese con una de las ARL recomendadas y solicite su afiliación como trabajador independiente.
+
+💡 Puede elegir la ARL de su preferencia. Todas son válidas.
 
 ¿Ya tiene ARL o necesita ayuda para afiliarse?"""
     ],
@@ -453,4 +447,3 @@ Escriba su consulta de forma más específica y con gusto le ayudo.
 
 # Exportar el diccionario
 __all__ = ['RESPUESTAS']
->>>>>>> 391ac66 (29/07/2026)

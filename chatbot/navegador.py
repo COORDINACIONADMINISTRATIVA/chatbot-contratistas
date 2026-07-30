@@ -71,7 +71,7 @@ def formatear_paso(flujo_id, paso, indice, total):
     opciones = paso.get('opciones', [])
     
     # Barra de progreso simple
-    progreso = f"[{indice + 1}/{total}]"
+    progreso = f"📌 Paso {indice + 1} de {total}"
     
     mensaje = f"""📌 {titulo} {progreso}
 
@@ -88,15 +88,12 @@ def formatear_paso(flujo_id, paso, indice, total):
             opcion_limpia = re.sub(r'^[✅❌📌📍🔄📋📤🔐🆘🔍]+\s*', '', opcion_limpia)
             mensaje += f"{i}. {opcion_limpia}\n"
     
-    # Agregar comandos de navegación
+    # Agregar comandos de navegación (más limpio)
     mensaje += f"""
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📌 Escriba el número de la opción, o use:
-◀️ "atrás" - Paso anterior
-ℹ️ "ayuda" - Más información
-🏠 "menú" - Volver al inicio
+▶️ Escriba el número de la opción o use un comando:
+◀️ atrás   ℹ️ ayuda   🏠 menú
 """
-    
     return mensaje
 
 def formatear_detalle(paso):
@@ -117,9 +114,11 @@ def formatear_detalle(paso):
 
 def formatear_menu_principal():
     """Formatea el menú principal"""
-    return """🏠 MENÚ PRINCIPAL
+    return """👋 ¡Hola! Soy tu asistente de contratación de UNIMINUTO Virtual.
 
-Seleccione un tema para comenzar:
+Estoy aquí para guiarte paso a paso en todo el proceso de contratación: desde el registro en el portal hasta la firma de tu contrato.
+
+📌 Elige un tema escribiendo el número o el nombre:
 
 1️⃣ 📋 Documentos requeridos
 2️⃣ 🌐 Registro en el portal de proveedores
@@ -128,9 +127,7 @@ Seleccione un tema para comenzar:
 5️⃣ 🏥 Examen médico ocupacional
 6️⃣ 📊 Estado de mi proceso
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-💡 Escriba el número o el nombre del tema.
-Ejemplo: "1" o "documentos"
+¿En qué puedo ayudarte hoy?
 """
 
 def formatear_despedida():

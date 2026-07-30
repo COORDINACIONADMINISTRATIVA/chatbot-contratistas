@@ -1,7 +1,7 @@
 # chatbot/orquestador.py
 """
 Punto de entrada único del chatbot con sistema de flujo guiado
-VERSIÓN DEFINITIVA - Maneja respuestas "No" con detalles
+VERSIÓN DEFINITIVA - Maneja respuestas "No" con detalles y redirige a ayuda externa
 """
 
 from .gestor_estado import gestor
@@ -221,26 +221,36 @@ def responder(mensaje, usuario="anonimo"):
                 es_num, num = True, num_texto
 
         # ============================================================
-        # CASO ESPECIAL: RESPUESTA "NO" CON DETALLE
+        # CASO ESPECIAL: RESPUESTA "NO" CON DETALLE Y REDIRECCIÓN
         # ============================================================
-        # Si el paso tiene "respuesta_no" y el usuario eligió la opción 2 (o cualquier opción que no sea "Sí")
-        if paso and paso.get('respuesta_no'):
-            # Detectar si el usuario eligió la opción 2 (o similar)
+        # Solo se activa si el paso NO es una lista de selección
+        if paso and paso.get('respuesta_no') and not _es_lista_de_seleccion(opciones):
             if es_num and num == 2:
-                # Mostrar la respuesta detallada
-                respuesta_no = paso['respuesta_no']
-                mensaje_detalle = respuesta_no.get('mensaje', '')
-                pregunta_seguimiento = respuesta_no.get('pregunta', '¿Entendió la explicación?')
-                opciones_seguimiento = respuesta_no.get('opciones', ['✅ Sí, entendí', '❌ No, aún tengo dudas'])
+                # Verificar si ya se mostró la ayuda detallada
+                ultima_respuesta = memoria.obtener_ultima_respuesta(usuario)
                 
-                # Formatear la respuesta con la pregunta de seguimiento
-                respuesta = f"{mensaje_detalle}\n\n💡 {pregunta_seguimiento}\n\n"
-                for i, op in enumerate(opciones_seguimiento, 1):
-                    respuesta += f"{i}. {op}\n"
-                
-                # Guardar en memoria y devolver
-                memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
-                return respuesta
+                # Si la última respuesta contenía la pregunta de seguimiento, ya se mostró la ayuda
+                if ultima_respuesta and ('✅ Sí, entendí' in ultima_respuesta or '❌ No, aún tengo dudas' in ultima_respuesta):
+                    # Redirigir al paso de ayuda externa (el último paso del flujo)
+                    paso_destino = total - 1  # El último paso es ayuda_externa
+                    gestor.ir_a_paso(usuario, paso_destino)
+                    nuevo_paso = obtener_paso(flujo_id, estado['paso'])
+                    respuesta = formatear_paso(flujo_id, nuevo_paso, estado['paso'], total)
+                    memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
+                    return respuesta
+                else:
+                    # Mostrar la ayuda detallada por primera vez
+                    respuesta_no = paso['respuesta_no']
+                    mensaje_detalle = respuesta_no.get('mensaje', '')
+                    pregunta_seguimiento = respuesta_no.get('pregunta', '¿Entendió la explicación?')
+                    opciones_seguimiento = respuesta_no.get('opciones', ['✅ Sí, entendí', '❌ No, aún tengo dudas'])
+                    
+                    respuesta = f"{mensaje_detalle}\n\n💡 {pregunta_seguimiento}\n\n"
+                    for i, op in enumerate(opciones_seguimiento, 1):
+                        respuesta += f"{i}. {op}\n"
+                    
+                    memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
+                    return respuesta
 
         # ============================================================
         # SELECCIÓN DE OPCIÓN POR NÚMERO (CONTINUACIÓN)
@@ -330,13 +340,16 @@ def responder(mensaje, usuario="anonimo"):
         return respuesta
 
     # ============================================================
-    # MENÚ PRINCIPAL
+    # MENÚ PRINCIPAL (PRIORIDAD ALTA)
     # ============================================================
     if mensaje_limpio in ["1", "2", "3", "4", "5", "6"]:
         index = int(mensaje_limpio) - 1
         if 0 <= index < len(TEMAS_NUMEROS):
             return iniciar_flujo(usuario, TEMAS_NUMEROS[index], mensaje)
 
+    # ============================================================
+    # DETECCIÓN DE TEMAS (SOLO SI NO ES NÚMERO)
+    # ============================================================
     tema_detectado = detectar_tema(mensaje_limpio)
     if tema_detectado:
         return iniciar_flujo(usuario, tema_detectado, mensaje)

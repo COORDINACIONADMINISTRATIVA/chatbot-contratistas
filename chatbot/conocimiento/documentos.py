@@ -87,7 +87,7 @@ Los documentos que debe presentar dependen de su tipo de contratación:
 
 📌 REQUISITOS GENERALES PARA AMBOS:
 - ✅ Todos en formato PDF.
-- ✅ Sin contraseña.
+- ✅ PDF sin contraseña.
 - ✅ Fecha de expedición NO mayor a 30 días (excepto examen médico).
 - ✅ Documentos legibles y completos.
 
@@ -206,7 +206,7 @@ A continuación, la lista detallada de documentos que debe presentar su empresa:
 
 🔹 ¿CÓMO DEBE SER EL ARCHIVO?
 - Formato: PDF (NO JPG, NO Word).
-- Sin contraseña.
+- En PDF sin contraseña.
 - Legible: que se vean claramente todos los datos.
 
 🔹 ¿PUEDO TOMARLE FOTO CON EL CELULAR?
@@ -363,6 +363,8 @@ Sí. Todos los contratistas que prestan servicios a UNIMINUTO deben tener ARL ac
 
 💡 CONSEJO:
 Si no tiene ARL, comuníquese con una de las ARL recomendadas y solicite su afiliación como trabajador independiente.
+
+"💡 Puede elegir la ARL de su preferencia. Todas son válidas."
 
 ¿Ya tiene ARL o necesita ayuda para afiliarse?"""
 

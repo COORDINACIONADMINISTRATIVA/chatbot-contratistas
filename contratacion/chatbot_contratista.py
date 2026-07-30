@@ -1513,35 +1513,3 @@ Verifique que el número esté bien escrito. Si acaba de firmar contrato, puede 
     respuesta = random.choice(RESPUESTAS['fuera_de_alcance'])
     memoria.guardar_mensaje(usuario, respuesta, tipo="bot", intencion="fuera_de_alcance")
     return respuesta
-=======
-Chatbot para contratistas - Punto de compatibilidad
-Ahora usa la nueva arquitectura V2.0 con flujo guiado
-"""
-
-import sys
-import os
-
-# Asegurar que el path incluya la carpeta raíz
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Importar el nuevo orquestador
-from chatbot.orquestador import responder as responder_nuevo
-
-
-def responder_contratista(mensaje, usuario="anonimo"):
-    """
-    Punto de entrada principal para el chatbot (compatibilidad con app.py)
-    Ahora usa la nueva arquitectura V2.0 con flujo guiado.
-    """
-    return responder_nuevo(mensaje, usuario)
-
-
-# Exportar funciones necesarias para compatibilidad
-from chatbot.memoria import memoria
-from chatbot.gestor_estado import gestor
-from chatbot.respuestas import RESPUESTAS
-from chatbot.respuestas_campos import RESPUESTAS_CAMPOS
-
-# Para que app.py pueda importar lo que necesita
-__all__ = ['responder_contratista', 'memoria', 'gestor', 'RESPUESTAS', 'RESPUESTAS_CAMPOS']
->>>>>>> 391ac66 (29/07/2026)

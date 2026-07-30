@@ -40,7 +40,7 @@ FLUJOS = {
                 "contenido": "🔹 Complete los campos del formulario con atención:\n\n🏢 SEDE DE OPERACIONES: 'Rectoría UNIMINUTO Virtual' (primera opción)\n📦 BIEN O SERVICIO: 'Servicio' + categoría correspondiente\n👤 TRATAMIENTO: 'Señor(a)' (o 'Empleado(a)' si es colaborador)",
                 "detalle": "Los errores más comunes son: seleccionar otra sede, elegir el régimen equivocado o poner un tratamiento incorrecto. Si tiene duda en algún campo, pregúnteme y le explico en detalle.",
                 "pregunta": "¿Tiene duda con algún campo de estos?",
-                "opciones": ["Si, tengo una duda", "No, continuar"],
+                "opciones": ["No, continuar", "Si, tengo una duda"],
                 "respuesta_no": {
                     "mensaje": "📌 No se preocupe, aquí le explico cada campo en detalle:\n\n🏢 SEDE DE OPERACIONES:\n- Debe seleccionar 'Rectoría UNIMINUTO Virtual'.\n- Es la PRIMERA opción de la lista.\n- Si selecciona cualquier otra sede, su registro será rechazado.\n\n📦 BIEN O SERVICIO:\n- Seleccione 'Servicio'.\n- Luego elija la categoría que corresponda a su labor.\n- Si no sabe qué categoría elegir, pregúnteme y le ayudo.\n\n👤 TRATAMIENTO:\n- 'Señor(a)' → si es persona natural/independiente.\n- 'Empleado(a)' → solo si es colaborador de UNIMINUTO.\n- Si no es colaborador, siempre use 'Señor(a)'.\n\n💡 La mayoría de los rechazos son por Sede o Tratamiento incorrectos."
                 }
@@ -51,7 +51,7 @@ FLUJOS = {
                 "contenido": "🔹 Complete los siguientes campos:\n\n📋 RÉGIMEN: 'Simplificado' (natural) o 'Común' (empresa)\n📧 CORREO: El mismo que aparece en su RUT\n📮 CÓDIGO POSTAL: Busque el de su ciudad en Google",
                 "detalle": "El régimen debe coincidir con su RUT. Si es persona natural, use 'Simplificado'. Si es empresa, use 'Común'. El código postal es de 6 dígitos, búsquelo en Google: 'código postal [nombre de su ciudad]'.",
                 "pregunta": "¿Tiene duda con algún campo de estos?",
-                "opciones": ["Si, tengo una duda", "No, continuar"],
+                "opciones": ["No, continuar", "Si, tengo una duda"],
                 "respuesta_no": {
                     "mensaje": "📌 Aquí le explico cada campo con más detalle:\n\n📋 RÉGIMEN:\n- Si es persona natural (independiente): seleccione 'Simplificado'.\n- Si es persona jurídica (empresa): seleccione 'Común'.\n- Si selecciona el régimen equivocado, su registro será rechazado.\n- Consulte su RUT para confirmar su régimen.\n\n📧 CORREO ELECTRÓNICO:\n- Debe ser el mismo que aparece en su RUT.\n- Allí recibirá toda la comunicación oficial.\n- Verifíquelo antes de enviar.\n\n📮 CÓDIGO POSTAL:\n- Busque el código postal de su ciudad en Google.\n- Ejemplo: 'código postal Bogotá'.\n- No lo invente, el sistema lo valida.\n- Es de 6 dígitos (ej: 110111).\n\n💡 La mayoría de los rechazos son por Régimen o Código Postal incorrectos."
                 }
@@ -69,19 +69,28 @@ FLUJOS = {
             },
             {
                 "id": "paso_6",
-                "titulo": "PASO 6: Esperar la validación",
-                "contenido": "🔹 El sistema validará su información\n🔹 Recibirá un correo de confirmación si todo está correcto\n🔹 Si hay errores, el sistema le notificará para que los corrija",
-                "detalle": "La validación puede tardar de 1 a 3 días hábiles. Revise su correo (incluyendo spam) periódicamente. Si su registro es rechazado, podrá corregir y volver a intentarlo.",
-                "pregunta": "¿Listo para continuar con el siguiente paso del proceso?",
-                "opciones": ["✅ Sí, siguiente paso", "Quiero más informacion sobre la validación"],
+                "titulo": "PASO 6: Después del registro — ¿Qué sigue?",
+                "contenido": "🔹 ¡Formulario enviado! Ahora debe completar estos pasos:\n\n📌 PASO 1: SUBIR DOCUMENTOS AL PORTAL\n- Vaya al portal de proveedores: https://proveedores.uniminuto.edu\n- Inicie sesión con su usuario y contraseña.\n- Busque la sección 'Documentos' o 'Subir documentos'.\n- Suba TODOS los documentos requeridos en PDF y sin contraseña.\n\n📌 PASO 2: RADICAR DOCUMENTOS POR CORREO\n- Envíe los mismos documentos al correo de su supervisor.\n- Si no tiene el correo de su supervisor, contacte al área de contratación.\n- Asegúrese de que los documentos estén en PDF y sin contraseña.\n\n📌 PASO 3: ESPERAR LA VALIDACIÓN\n- El área de contratación revisará sus documentos.\n- Esto puede tardar de 1 a 3 días hábiles.\n- Recibirá un correo de confirmación si todo está correcto.\n- Si hay errores, le notificarán para que los corrija.\n\n📌 PASO 4: FIRMAR EL CONTRATO\n- Una vez aprobado, recibirá el contrato para firmar digitalmente.\n- Siga las instrucciones del correo para firmarlo.\n- Guarde una copia del contrato firmado.",
+                "detalle": "📌 IMPORTANTE:\n\n1. Si no sube los documentos al portal, el proceso no avanzará.\n2. Si no envía los documentos por correo a su supervisor, el proceso se retrasará.\n3. Todos los documentos deben estar en PDF y sin contraseña.\n4. La validación puede tardar de 1 a 3 días hábiles. Sea paciente.\n5. Si su registro es rechazado, no se desanime. Corrija los errores y vuelva a intentarlo.\n\n💡 Si tiene dudas sobre cómo subir los documentos, pregúnteme y le ayudo.",
+                "pregunta": "¿Entendió lo que debe hacer después del registro?",
+                "opciones": ["✅ Sí, entendí", "No, aún tengo dudas"],
                 "respuesta_no": {
-                    "mensaje": "📌 No se preocupe, aquí tiene más información sobre la validación:\n\n⏳ TIEMPO DE VALIDACIÓN:\n- La validación puede tardar de 1 a 3 días hábiles.\n- No se preocupe si no recibe respuesta inmediata.\n\n📧 REVISE SU CORREO:\n- Revise la bandeja de entrada y la carpeta de spam.\n- Asegúrese de que el correo registrado sea correcto.\n\n❌ SI SU REGISTRO ES RECHAZADO:\n- El sistema le notificará los errores específicos.\n- Podrá corregir y volver a intentarlo.\n- No se desanime, es un proceso normal.\n\n💡 Mientras espera, puede ir reuniendo los documentos requeridos (cédula, RUT, certificación bancaria, ARL, examen médico)."
+                    "mensaje": "📌 No se preocupe, aquí le explico con más detalle:\n\n📌 PASO 1: SUBIR DOCUMENTOS AL PORTAL\n- Ingrese a https://proveedores.uniminuto.edu\n- Inicie sesión con su usuario y contraseña.\n- Busque la sección 'Documentos' o 'Subir documentos'.\n- Seleccione cada documento y súbalo.\n- Asegúrese de que estén en PDF y sin contraseña.\n\n📌 PASO 2: RADICAR DOCUMENTOS POR CORREO\n- Envíe los mismos documentos al correo de su supervisor.\n- Si no tiene el correo, escriba al área de contratación.\n- Incluya su nombre y cédula en el asunto del correo.\n\n📌 PASO 3: ESPERAR LA VALIDACIÓN\n- La revisión puede tardar de 1 a 3 días hábiles.\n- Revise su correo (incluyendo spam) periódicamente.\n- Si hay errores, corríjalos y reenvíe los documentos.\n\n📌 PASO 4: FIRMAR EL CONTRATO\n- Después de la aprobación, recibirá el contrato por correo.\n- Lea todo el contrato antes de firmar.\n- Firme digitalmente siguiendo las instrucciones.\n- Guarde una copia del contrato firmado.\n\n💡 Si tiene dudas sobre algún paso, pregúnteme y le explico con más detalle."
                 }
             },
+            # ===== NUEVO PASO DE AYUDA EXTERNA =====
+            {
+                "id": "ayuda_externa",
+                "titulo": "📌 ¿Sigues teniendo dudas?",
+                "contenido": "Si aún tienes dudas después de esta explicación, te recomiendo ver este tutorial en YouTube:\n\n🔗 [ENLACE_DE_YOUTUBE_PENDIENTE]\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\nSi ya resolviste tus dudas, puedes continuar con el siguiente paso del proceso.",
+                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
+                "pregunta": "¿Listo para continuar?",
+                "opciones": ["1. Ir al siguiente paso"]
+            }
         ],
         "final": {
-            "mensaje": "🎉 ¡Ya completaste el registro en el portal!\n\nLos siguientes pasos son:\n📋 1. Reunir los documentos requeridos (persona natural o empresa)\n📤 2. Subir los documentos al portal\n📝 3. Firmar el contrato\n\n📌 ¿Qué desea hacer ahora?\n1. Ver documentos para persona natural\n2. Ver documentos para empresa\n3. Ir al menú principal",
-            "opciones": ["📋 Documentos persona natural", "📋 Documentos empresa", "🏠 Menú principal"]
+            "mensaje": "🎉 ¡Ya completaste el registro en el portal!\n\nLos siguientes pasos son:\n📋 1. Reunir los documentos requeridos (persona natural o empresa)\n📤 2. Subir los documentos al portal\n📝 3. Firmar el contrato\n\n📌 ¿Qué desea hacer ahora?\n1. Ir al menú principal",
+            "opciones": ["🏠 Menú principal"]
         }
     },
 
@@ -106,7 +115,7 @@ FLUJOS = {
             {
                 "id": "cedula",
                 "titulo": "📄 Cédula de ciudadanía",
-                "contenido": "📌 ¿CÓMO OBTENERLA?\n- Escanee ambas caras en un solo PDF\n- Asegúrese de que se vean claramente todos los datos\n- Sin contraseña\n- También sirve cédula de extranjería",
+                "contenido": "📌 ¿CÓMO OBTENERLA?\n- Escanee ambas caras en un solo PDF\n- Asegúrese de que se vean claramente todos los datos\n- En PDF y sin contraseña\n- También sirve cédula de extranjería",
                 "detalle": "Si su cédula está deteriorada, solicite una copia auténtica en la Registraduría. Si tiene cédula de extranjería, verifique que tenga permiso de trabajo vigente.",
                 "pregunta": "¿Ya tiene su cédula lista o necesita ayuda para escanearla?",
                 "opciones": ["✅ Ya la tengo lista", "📸 Necesito ayuda para escanearla", "🔙 Volver a documentos"],
@@ -155,7 +164,7 @@ FLUJOS = {
                 "pregunta": "¿Ya tiene ARL activa o necesita ayuda para afiliarse?",
                 "opciones": ["✅ Ya tengo ARL", "🆘 Necesito afiliarme", "🔙 Volver a documentos"],
                 "respuesta_no": {
-                    "mensaje": "🆘 Si necesita afiliarse a una ARL:\n\n1. Elija una ARL de la lista recomendada:\n   - Positiva\n   - Sura\n   - Colmena\n   - AXA Colpatria\n   - Seguros Bolívar\n   - La Equidad\n\n2. Comuníquese con la ARL elegida.\n3. Solicite afiliación como trabajador independiente.\n4. Indique que necesita la certificación para contratar con UNIMINUTO.\n5. La afiliación tiene un costo mensual.\n6. Solicite la certificación en PDF sin contraseña.\n\n💡 La certificación debe ser reciente (menos de 30 días)."
+                    "mensaje": "🆘 Si necesita afiliarse a una ARL:\n\n1. Elija una ARL de la lista recomendada, 💡 Puede elegir la ARL de su preferencia. Todas son válidas.:\n   - Positiva\n   - Sura\n   - Colmena\n   - AXA Colpatria\n   - Seguros Bolívar\n   - La Equidad\n\n2. Comuníquese con la ARL elegida.\n3. Solicite afiliación como trabajador independiente.\n4. Indique que necesita la certificación para contratar con UNIMINUTO.\n5. La afiliación tiene un costo mensual.\n6. Solicite la certificación en PDF sin contraseña.\n\n💡 La certificación debe ser reciente (menos de 30 días)."
                 }
             },
             {
@@ -169,10 +178,19 @@ FLUJOS = {
                     "mensaje": "📍 Si necesita hacer el examen médico:\n\n1. Puede realizarlo en:\n   - ARL (Administradora de Riesgos Laborales)\n   - Clínicas ocupacionales\n   - IPS autorizadas\n\n2. Pida una cita para examen médico ocupacional.\n3. El certificado debe indicar que es APTO para el cargo.\n4. Costo aproximado: $50,000 - $150,000.\n5. Solicite el certificado en PDF sin contraseña.\n\n💡 Consulte con su ARL, a veces cubren el examen.\nSi no sabe dónde hacerlo, consulte con su ARL o con el área de talento humano de UNIMINUTO Virtual."
                 }
             },
+            # ===== NUEVO PASO DE AYUDA EXTERNA =====
+            {
+                "id": "ayuda_externa",
+                "titulo": "📌 ¿Sigues teniendo dudas?",
+                "contenido": "Si aún tienes dudas después de esta explicación, te recomiendo ver este tutorial en YouTube:\n\n🔗 [ENLACE_DE_YOUTUBE_PENDIENTE]\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\nSi ya resolviste tus dudas, puedes continuar con el siguiente paso del proceso.",
+                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
+                "pregunta": "¿Listo para continuar?",
+                "opciones": ["1. Ir al siguiente paso"]
+            }
         ],
         "final": {
-            "mensaje": "✅ Ya revisamos todos los documentos para persona natural.\n\nRecuerde:\n- 📄 Cédula (ambas caras, PDF)\n- 🏦 Certificación bancaria (30 días, PDF)\n- 📋 RUT actualizado (30 días, PDF)\n- 📊 Formato Excel\n- 🏥 ARL activa\n- 🏥 Examen médico (3 años)\n\n📌 ¿Qué desea hacer ahora?\n1. Ver documentos para empresa\n2. Ir al menú principal",
-            "opciones": ["📋 Documentos empresa", "🏠 Menú principal"]
+            "mensaje": "✅ Ya revisamos todos los documentos para persona natural.\n\nRecuerde:\n- 📄 Cédula (ambas caras, PDF)\n- 🏦 Certificación bancaria (30 días, PDF)\n- 📋 RUT actualizado (30 días, PDF)\n- 📊 Formato Excel\n- 🏥 ARL activa\n- 🏥 Examen médico (3 años)\n\n📌 ¿Qué desea hacer ahora?\n1. Ir al menú principal",
+            "opciones": ["🏠 Menú principal"]
         }
     },
 
@@ -266,7 +284,7 @@ FLUJOS = {
             {
                 "id": "afiliacion",
                 "titulo": "🆘 Cómo afiliarse a una ARL",
-                "contenido": "🔹 PASO 1: Elija una ARL\n- Positiva\n- Sura\n- Colmena\n- AXA Colpatria\n- Seguros Bolívar\n- La Equidad\n\n🔹 PASO 2: Reúna los documentos\n- Cédula\n- RUT (si tiene)\n- Información de contacto",
+                "contenido": "🔹 PASO 1: Elija una ARL\n- Positiva\n- Sura\n- Colmena\n- AXA Colpatria\n- Seguros Bolívar\n- La Equidad\n💡 Puede elegir la ARL de su preferencia. Todas son válidas.\n\n🔹 PASO 2: Reúna los documentos\n- Cédula\n- RUT (si tiene)\n- Información de contacto",
                 "detalle": "Contacte la ARL de su elección, pida afiliación como trabajador independiente e indique que necesita la certificación para contratar con UNIMINUTO.",
                 "pregunta": "¿Ya eligió una ARL o necesita ayuda para decidir?",
                 "opciones": ["✅ Ya elegí una", "📞 Ayúdeme a elegir", "🔙 Volver al menú"],
@@ -277,7 +295,7 @@ FLUJOS = {
             {
                 "id": "certificacion",
                 "titulo": "📄 Certificación de ARL",
-                "contenido": "🔹 Una vez afiliado, solicite la certificación\n🔹 Debe estar en formato PDF\n🔹 Sin contraseña\n🔹 Debe ser reciente (no mayor a 30 días)",
+                "contenido": "🔹 Una vez afiliado, solicite la certificación\n🔹 Debe estar en formato PDF\n🔹 En PDF y sin contraseña\n🔹 Debe ser reciente (no mayor a 30 días)",
                 "detalle": "La certificación es gratuita después de la afiliación. Pregunte por el costo mensual de la afiliación como independiente.",
                 "pregunta": "¿Ya tiene su certificación de ARL lista?",
                 "opciones": ["✅ Sí, ya la tengo", "📄 Necesito pedirla", "🔙 Volver al menú"],
