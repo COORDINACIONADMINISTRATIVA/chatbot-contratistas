@@ -461,7 +461,7 @@ body.dark-mode .badge-activo {
 .header-logo {
     height: 45px;
     width: auto;
-    filter: brightness(0) invert(1);
+    filter: brightness(1) invert(0);
 }
 
 .header h1 {
@@ -1204,7 +1204,11 @@ tr:hover {
 
 .footer-logo img {
     height: 35px;
-    filter: brightness(0) invert(1);
+    filter: none;
+}
+
+body.dark-mode .footer-logo img {
+    filter: brightness(0) invert(1) brightness(0.85);
 }
 
 .footer-logo span {
@@ -1370,8 +1374,8 @@ tr:hover {
         gap: 8px;
     }
 }
-<<<<<<< HEAD
-/* ===== CORRECIONES PARA EL CHAT ===== */
+
+
 
 .chat-container {
     display: flex;
@@ -1513,8 +1517,7 @@ body.dark-mode .message-content {
 body.dark-mode .bot-message .message-content {
     background: #2a2a2a;
     border-color: #444;
-=======
-/* ===== CORRECCIONES FINALES PARA EL CHAT ===== */
+
 .message-content {
     white-space: pre-wrap !important;
     word-wrap: break-word !important;
@@ -1524,5 +1527,5 @@ body.dark-mode .bot-message .message-content {
     max-height: 120px !important;
     resize: none !important;
     overflow-y: auto !important;
->>>>>>> 391ac66 (29/07/2026)
+}
 }

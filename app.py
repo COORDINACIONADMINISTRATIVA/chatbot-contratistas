@@ -643,6 +643,8 @@ def consultar_contratista_api():
                 'estado': r.get('ESTADO', 'Sin estado'),
                 'observacion': r.get('OBSERVACIÓN', 'Sin observaciones'),
                 'año': str(r.get('AÑO', '')),
+                'solicitud_ariba': r.get('SOLICITUD EN ARIBA', ''),
+                'tipo': 'resumen'
             })
         
         return jsonify({
@@ -688,6 +690,7 @@ def mi_proceso():
                     'estado': estado_traducido,
                     'observacion': obs_traducida,
                     'año': str(r.get('AÑO', '')),
+                    'solicitud_ariba': r.get('SOLICITUD EN ARIBA', ''),  # <--- ESTA ES LA ÚNICA LÍNEA QUE SE AGREGA
                     'tipo': 'resumen'
                 })
         

@@ -50,7 +50,9 @@ class LectorContratistas:
                     self.columnas['fecha_fin'] = col
                 elif 'OBJETO' in col_upper and 'CONTRATO' in col_upper:
                     self.columnas['objeto'] = col
-            
+                elif 'SOLICITUD' in col_upper and 'ARIBA' in col_upper:
+                    self.columnas['solicitud_ariba'] = col
+
             print(f"📋 Columnas mapeadas: {self.columnas}")
             
             # Crear columna CEDULA limpia
@@ -138,7 +140,8 @@ class LectorContratistas:
             'año': '',
             'fecha_inicio': '',
             'fecha_fin': '',
-            'objeto': ''
+            'objeto':'',
+            'solicitud_ariba':''
         }
         
         try:
@@ -183,6 +186,20 @@ class LectorContratistas:
                 col = self.columnas['objeto']
                 if col in registro and pd.notna(registro.get(col)):
                     info['objeto'] = str(registro.get(col, ''))
+
+            if 'solicitud_ariba' in self.columnas:
+                col = self.columnas['solicitud_ariba']
+                if col in registro and pd.notna(registro.get(col)):
+                    valor = str(registro.get(col, ''))
+                    # Limpiar: quitar comillas, espacios, y extraer solo el código CRW/CW
+                    valor = valor.replace('"', '').replace("'", '').strip()
+                    # Buscar el primer código CRW o CW seguido de números
+                    match = re.search(r'\b(CRW|CW)\d+\b', valor)
+                    if match:
+                        info['solicitud_ariba'] = match.group(0)
+                    else:
+                        # Si no hay código, guardar el valor limpio (por si es "NO APLICA" o similar)
+                        info['solicitud_ariba'] = valor if valor else '-'
                     
         except Exception as e:
             print(f"Error en obtener_info: {e}")

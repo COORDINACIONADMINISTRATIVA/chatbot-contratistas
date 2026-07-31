@@ -130,7 +130,7 @@ def _es_lista_de_seleccion(opciones):
 
 def es_opcion_volver_menu(texto):
     t = texto.lower()
-    return "volver al menú" in t or "volver al menu" in t or "🏠" in texto
+    return "volver al menú" in t or "volver al menu" in t or "🏠" in texto or "ir al menú principal" in t
 
 
 def es_opcion_volver_inicio_flujo(texto):
@@ -231,11 +231,21 @@ def responder(mensaje, usuario="anonimo"):
                 
                 # Si la última respuesta contenía la pregunta de seguimiento, ya se mostró la ayuda
                 if ultima_respuesta and ('✅ Sí, entendí' in ultima_respuesta or '❌ No, aún tengo dudas' in ultima_respuesta):
-                    # Redirigir al paso de ayuda externa (el último paso del flujo)
-                    paso_destino = total - 1  # El último paso es ayuda_externa
-                    gestor.ir_a_paso(usuario, paso_destino)
-                    nuevo_paso = obtener_paso(flujo_id, estado['paso'])
-                    respuesta = formatear_paso(flujo_id, nuevo_paso, estado['paso'], total)
+                    # Mostrar mensaje final de ayuda externa y terminar el flujo
+                    respuesta = """
+📌 ¿Sigues teniendo dudas?
+
+Si aún tienes dudas después de esta explicación, te recomiendo ver este tutorial en YouTube:
+
+🔗 [ENLACE_DE_YOUTUBE_PENDIENTE]
+
+Si después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.
+
+No te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.
+
+💡 Para continuar, escribe "menú" para volver al inicio.
+                    """
+                    gestor.resetear(usuario)
                     memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
                     return respuesta
                 else:
