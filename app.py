@@ -637,13 +637,16 @@ def consultar_contratista_api():
         
         contratistas = []
         for r in resultados:
+            # ===== USAR obtener_info_contratista PARA EXTRAER EL CONTRATO =====
+            info = lector.obtener_info_contratista(r)
+            
             contratistas.append({
                 'nombre': r.get('NOMBRE DE CONTRATISTA', 'Sin nombre'),
                 'cedula': r.get('CEDULA', ''),
                 'estado': r.get('ESTADO', 'Sin estado'),
                 'observacion': r.get('OBSERVACIÓN', 'Sin observaciones'),
                 'año': str(r.get('AÑO', '')),
-                'solicitud_ariba': r.get('SOLICITUD EN ARIBA', ''),
+                'solicitud_ariba': info.get('solicitud_ariba', ''),  # <--- CORREGIDO
                 'tipo': 'resumen'
             })
         
@@ -656,6 +659,7 @@ def consultar_contratista_api():
         return jsonify({'error': str(e)}), 500
 
 # ==================== API MI PROCESO ====================
+# ==================== API MI PROCESO (CORREGIDO) ====================
 @app.route('/api/mi-proceso', methods=['POST'])
 def mi_proceso():
     data = request.get_json()
@@ -671,6 +675,9 @@ def mi_proceso():
         
         if registros:
             for r in registros:
+                # ===== OBTENER INFO COMPLETA DEL LECTOR =====
+                info = lector.obtener_info_contratista(r)
+                
                 estado_original = r.get('ESTADO', 'Sin estado')
                 estado_traducido = traducir_estado(estado_original)
                 if not estado_traducido:
@@ -684,15 +691,18 @@ def mi_proceso():
                     else:
                         obs_traducida = "📋 Sin información adicional"
                 
+                # ===== CONSTRUIR EL JSON USANDO info COMPLETO =====
                 contratistas.append({
-                    'nombre': r.get('NOMBRE DE CONTRATISTA', 'Sin nombre'),
-                    'cedula': r.get('CEDULA', cedula),
+                    'nombre': info.get('nombre', 'Sin nombre'),
+                    'cedula': info.get('cedula', cedula),  # Usar info o cedula original
                     'estado': estado_traducido,
                     'observacion': obs_traducida,
-                    'año': str(r.get('AÑO', '')),
-                    'solicitud_ariba': r.get('SOLICITUD EN ARIBA', ''),  # <--- ESTA ES LA ÚNICA LÍNEA QUE SE AGREGA
+                    'año': info.get('año', ''),
+                    'solicitud_ariba': info.get('solicitud_ariba', '-'),  # <--- ESTO ES LO QUE IMPORTAAA
                     'tipo': 'resumen'
                 })
+        
+        # ... el resto del código (seguimiento) sigue igual ...
         
         if seguimiento:
             solpedidos = {}

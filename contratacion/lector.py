@@ -50,7 +50,7 @@ class LectorContratistas:
                     self.columnas['fecha_fin'] = col
                 elif 'OBJETO' in col_upper and 'CONTRATO' in col_upper:
                     self.columnas['objeto'] = col
-                elif 'CONTRATO' in col_upper:
+                elif col_upper == 'CONTRATO ':
                     self.columnas['solicitud_ariba'] = col
 
             print(f"📋 Columnas mapeadas: {self.columnas}")
@@ -140,8 +140,8 @@ class LectorContratistas:
             'año': '',
             'fecha_inicio': '',
             'fecha_fin': '',
-            'objeto':'',
-            'solicitud_ariba':''
+            'objeto': '',
+            'solicitud_ariba': '-'
         }
         
         try:
@@ -171,7 +171,6 @@ class LectorContratistas:
                 if col in registro:
                     info['año'] = str(registro.get(col, ''))
             
-            # ===== NUEVO: EXTRAER FECHAS Y OBJETO =====
             if 'fecha_inicio' in self.columnas:
                 col = self.columnas['fecha_inicio']
                 if col in registro and pd.notna(registro.get(col)):
@@ -187,20 +186,29 @@ class LectorContratistas:
                 if col in registro and pd.notna(registro.get(col)):
                     info['objeto'] = str(registro.get(col, ''))
 
+            # ===== EXTRACCIÓN DE CONTRATO =====
             if 'solicitud_ariba' in self.columnas:
                 col = self.columnas['solicitud_ariba']
                 if col in registro and pd.notna(registro.get(col)):
-                    valor = str(registro.get(col, ''))
-                    # Limpiar: quitar comillas, espacios, y extraer solo el código CRW/CW
+                    valor = str(registro.get(col, '')).strip()
+                    # Limpiar caracteres especiales
                     valor = valor.replace('"', '').replace("'", '').strip()
-                    # Buscar el primer código CRW o CW seguido de números
-                    match = re.search(r'\b(CRW|CW)\d+\b', valor)
-                    if match:
-                        info['solicitud_ariba'] = match.group(0)
-                    else:
-                        # Si no hay código, guardar el valor limpio (por si es "NO APLICA" o similar)
-                        info['solicitud_ariba'] = valor if valor else '-'
                     
+                    # 1. Buscar CPS (ej: CPS 438-2025, CPS-438-2025)
+                    match_cps = re.search(r'(CPS[\s-]?\d{3,}[\s-]?\d{4})', valor.upper())
+                    if match_cps:
+                        info['solicitud_ariba'] = match_cps.group(0)
+                    else:
+                        # 2. Buscar OTROSI (ej: OTROSI No.1 - CPS 680-2025)
+                        match_otrosi = re.search(r'(OTROSI[^\d]*\d+[^\d]*(?:CPS[\s-]?\d{3,}[\s-]?\d{4}))', valor.upper())
+                        if match_otrosi:
+                            info['solicitud_ariba'] = match_otrosi.group(0)
+                        else:
+                            # 3. Si no tiene CPS ni OTROSI, verificar si es "NO APLICA" o similar
+                            if valor and 'NO APLICA' not in valor.upper():
+                                info['solicitud_ariba'] = valor
+                            # Si es "NO APLICA" o está vacío, queda como '-'
+                            
         except Exception as e:
             print(f"Error en obtener_info: {e}")
         
