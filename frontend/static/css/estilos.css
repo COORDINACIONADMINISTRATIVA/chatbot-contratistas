@@ -1243,6 +1243,30 @@ body.dark-mode .footer-logo img {
     width: 100%;
 }
 
+/* ===== LINKS EN EL CHAT ===== */
+.message-content a,
+.message-content .link {
+    color: var(--azul-uniminuto);
+    text-decoration: underline;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.message-content a:hover,
+.message-content .link:hover {
+    color: var(--azul-claro);
+}
+
+body.dark-mode .message-content a,
+body.dark-mode .message-content .link {
+    color: #00A3E0;
+}
+
+body.dark-mode .message-content a:hover,
+body.dark-mode .message-content .link:hover {
+    color: #66c0ff;
+}
+
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
     .header-content {

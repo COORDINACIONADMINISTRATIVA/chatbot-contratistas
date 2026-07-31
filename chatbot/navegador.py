@@ -125,7 +125,7 @@ Estoy aquí para guiarte paso a paso en todo el proceso de contratación: desde 
 3️⃣ 📝 Actualización del RUT
 4️⃣ 🏥 ARL (Afiliación y certificación)
 5️⃣ 🏥 Examen médico ocupacional
-6️⃣ 📊 Estado de mi proceso
+
 
 ¿En qué puedo ayudarte hoy?
 """

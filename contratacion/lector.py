@@ -50,7 +50,7 @@ class LectorContratistas:
                     self.columnas['fecha_fin'] = col
                 elif 'OBJETO' in col_upper and 'CONTRATO' in col_upper:
                     self.columnas['objeto'] = col
-                elif 'SOLICITUD' in col_upper and 'ARIBA' in col_upper:
+                elif 'CONTRATO' in col_upper:
                     self.columnas['solicitud_ariba'] = col
 
             print(f"📋 Columnas mapeadas: {self.columnas}")

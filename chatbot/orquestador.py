@@ -47,7 +47,7 @@ MAP_TEMAS = {
 import re
 import unicodedata
 
-TEMAS_NUMEROS = ["documentos", "registro", "rut", "arl", "examen", "estado"]
+TEMAS_NUMEROS = ["documentos", "registro", "rut", "arl", "examen"]
 
 _STOPWORDS = {
     'ya', 'lo', 'la', 'el', 'de', 'que', 'no', 'si', 'a', 'en', 'un', 'una',
@@ -231,21 +231,11 @@ def responder(mensaje, usuario="anonimo"):
                 
                 # Si la última respuesta contenía la pregunta de seguimiento, ya se mostró la ayuda
                 if ultima_respuesta and ('✅ Sí, entendí' in ultima_respuesta or '❌ No, aún tengo dudas' in ultima_respuesta):
-                    # Mostrar mensaje final de ayuda externa y terminar el flujo
-                    respuesta = """
-📌 ¿Sigues teniendo dudas?
-
-Si aún tienes dudas después de esta explicación, te recomiendo ver este tutorial en YouTube:
-
-🔗 [ENLACE_DE_YOUTUBE_PENDIENTE]
-
-Si después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.
-
-No te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.
-
-💡 Para continuar, escribe "menú" para volver al inicio.
-                    """
-                    gestor.resetear(usuario)
+                    # Redirigir al paso de ayuda externa (el último paso del flujo)
+                    paso_destino = total - 1  # El último paso es ayuda_externa
+                    gestor.ir_a_paso(usuario, paso_destino)
+                    nuevo_paso = obtener_paso(flujo_id, estado['paso'])
+                    respuesta = formatear_paso(flujo_id, nuevo_paso, estado['paso'], total)
                     memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
                     return respuesta
                 else:
@@ -304,6 +294,13 @@ No te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.
             
             # Verificar si es "volver al menú" (sale del flujo por completo)
             if es_opcion_volver_menu(opcion_seleccionada):
+                respuesta = formatear_menu_principal()
+                gestor.resetear(usuario)
+                memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
+                return respuesta
+
+            # Verificar si la opción es "Ir al menú principal"
+            if "ir al menú principal" in opcion_seleccionada.lower():
                 respuesta = formatear_menu_principal()
                 gestor.resetear(usuario)
                 memoria.guardar_mensaje(usuario, respuesta, tipo="bot")

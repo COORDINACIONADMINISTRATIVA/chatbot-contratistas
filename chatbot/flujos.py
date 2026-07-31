@@ -78,12 +78,12 @@ FLUJOS = {
                     "mensaje": "📌 No se preocupe, aquí le explico con más detalle:\n\n📌 PASO 1: SUBIR DOCUMENTOS AL PORTAL\n- Ingrese a https://proveedores.uniminuto.edu\n- Inicie sesión con su usuario y contraseña.\n- Busque la sección 'Documentos' o 'Subir documentos'.\n- Seleccione cada documento y súbalo.\n- Asegúrese de que estén en PDF y sin contraseña.\n\n📌 PASO 2: RADICAR DOCUMENTOS POR CORREO\n- Envíe los mismos documentos al correo de su supervisor.\n- Si no tiene el correo, escriba al área de contratación.\n- Incluya su nombre y cédula en el asunto del correo.\n\n📌 PASO 3: ESPERAR LA VALIDACIÓN\n- La revisión puede tardar de 1 a 3 días hábiles.\n- Revise su correo (incluyendo spam) periódicamente.\n- Si hay errores, corríjalos y reenvíe los documentos.\n\n📌 PASO 4: FIRMAR EL CONTRATO\n- Después de la aprobación, recibirá el contrato por correo.\n- Lea todo el contrato antes de firmar.\n- Firme digitalmente siguiendo las instrucciones.\n- Guarde una copia del contrato firmado.\n\n💡 Si tiene dudas sobre algún paso, pregúnteme y le explico con más detalle."
                 }
             },
-            # ===== NUEVO PASO DE AYUDA EXTERNA =====
+            # ===== PASO DE AYUDA EXTERNA (justo antes del final) =====
             {
                 "id": "ayuda_externa",
                 "titulo": "📌 ¿Sigues teniendo dudas?",
-                "contenido": "Si aún tienes dudas después de esta explicación, te recomiendo ver este tutorial en YouTube:\n\n🔗 [ENLACE_DE_YOUTUBE_PENDIENTE]\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\nSi ya resolviste tus dudas, puedes continuar con el siguiente paso del proceso.",
-                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
+                "contenido": "Si aún tienes dudas sobre el registro en el portal, te recomiendo ver este tutorial:\n\n🔗 https://uniminuto0-my.sharepoint.com/personal/coord_admin_rv_uniminuto_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fcoord%5Fadmin%5Frv%5Funiminuto%5Fedu%2FDocuments%2FDAF%2FVARIOS%2FPLANTILLAS%20IMPORTANTES%2FProceso%20para%20Registro%20en%20Plataforma%2D20260223%5F170351%2DGrabaci%C3%B3n%20de%20la%20reuni%C3%B3n%2Emp4&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E44292558%2D9973%2D4a2a%2D9769%2D5a5d1fa63ef1&ct=1785532073546&or=OWA%2DNT%2DMail&cid=dd0a5fe8%2D1ba6%2D696c%2D0456%2Dc616eff8828f&ga=1&LOF=1\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
+                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en SharePoint.",
                 "pregunta": "¿Listo para continuar?",
                 "opciones": ["1. Ir al siguiente paso"]
             }
@@ -178,12 +178,12 @@ FLUJOS = {
                     "mensaje": "📍 Si necesita hacer el examen médico:\n\n1. Puede realizarlo en:\n   - ARL (Administradora de Riesgos Laborales)\n   - Clínicas ocupacionales\n   - IPS autorizadas\n\n2. Pida una cita para examen médico ocupacional.\n3. El certificado debe indicar que es APTO para el cargo.\n4. Costo aproximado: $50,000 - $150,000.\n5. Solicite el certificado en PDF sin contraseña.\n\n💡 Consulte con su ARL, a veces cubren el examen.\nSi no sabe dónde hacerlo, consulte con su ARL o con el área de talento humano de UNIMINUTO Virtual."
                 }
             },
-            # ===== NUEVO PASO DE AYUDA EXTERNA =====
+            # ===== PASO DE AYUDA EXTERNA (justo antes del final) =====
             {
                 "id": "ayuda_externa",
                 "titulo": "📌 ¿Sigues teniendo dudas?",
-                "contenido": "Si aún tienes dudas después de esta explicación, te recomiendo ver este tutorial en YouTube:\n\n🔗 [ENLACE_DE_YOUTUBE_PENDIENTE]\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\nSi ya resolviste tus dudas, puedes continuar con el siguiente paso del proceso.",
-                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
+                "contenido": "Si aún tienes dudas sobre los documentos requeridos, te recomiendo ver este tutorial:\n\n🔗 https://uniminuto0-my.sharepoint.com/personal/coord_admin_rv_uniminuto_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fcoord%5Fadmin%5Frv%5Funiminuto%5Fedu%2FDocuments%2FDAF%2FVARIOS%2FPLANTILLAS%20IMPORTANTES%2FProceso%20para%20Registro%20en%20Plataforma%2D20260223%5F170351%2DGrabaci%C3%B3n%20de%20la%20reuni%C3%B3n%2Emp4&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E44292558%2D9973%2D4a2a%2D9769%2D5a5d1fa63ef1&ct=1785532073546&or=OWA%2DNT%2DMail&cid=dd0a5fe8%2D1ba6%2D696c%2D0456%2Dc616eff8828f&ga=1&LOF=1\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
+                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en SharePoint.",
                 "pregunta": "¿Listo para continuar?",
                 "opciones": ["1. Ir al siguiente paso"]
             }
@@ -256,6 +256,15 @@ FLUJOS = {
                     "mensaje": "🔄 Si algo falló en su RUT:\n\n1. Revise la fecha de expedición: debe ser menor a 30 días.\n2. Revise la marca de agua: debe ser 'Copia' o 'Certificado'.\n3. Verifique que su nombre y cédula estén correctos.\n4. Verifique la actividad económica.\n\nSi algún dato está incorrecto:\n1. Vuelva a la DIAN.\n2. Actualice los datos necesarios.\n3. Descargue un nuevo RUT.\n\n💡 Si tiene dudas, consulte con un contador."
                 }
             },
+            # ===== PASO DE AYUDA EXTERNA (justo antes del final) =====
+            {
+                "id": "ayuda_externa",
+                "titulo": "📌 ¿Sigues teniendo dudas?",
+                "contenido": "Si aún tienes dudas sobre la actualización del RUT, te recomiendo ver este tutorial en YouTube:\n\n🔗 https://www.youtube.com/watch?v=bbZbULl1l8Y\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
+                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
+                "pregunta": "¿Listo para continuar?",
+                "opciones": ["1. Ir al siguiente paso"]
+            }
         ],
         "final": {
             "mensaje": "✅ ¡Tu RUT ya está actualizado!\n\nRecuerda:\n- 📅 Fecha de expedición: menor a 30 días\n- 💧 Marca de agua: 'Copia' o 'Certificado'\n- 📋 Actividad económica: 8560 (recomendada)\n\n📌 ¿Qué desea hacer ahora?\n1. Ir a documentos\n2. Ir al registro en portal\n3. Ir al menú principal",
@@ -303,6 +312,15 @@ FLUJOS = {
                     "mensaje": "📄 Si necesita pedir la certificación de ARL:\n\n1. Comuníquese con su ARL (por teléfono, correo o portal).\n2. Solicite la certificación de afiliación.\n3. Indique que la necesita para contratar con UNIMINUTO.\n4. Solicítela en formato PDF sin contraseña.\n5. Verifique que la fecha sea reciente (menos de 30 días).\n\n💡 La certificación es gratuita después de la afiliación."
                 }
             },
+            # ===== PASO DE AYUDA EXTERNA (justo antes del final) =====
+            {
+                "id": "ayuda_externa",
+                "titulo": "📌 ¿Sigues teniendo dudas?",
+                "contenido": "Si aún tienes dudas sobre la ARL, te recomiendo ver este tutorial en YouTube:\n\n🔗 https://youtu.be/S-ps-ctVbAU?si=mTQZH4p9SGvYmWr9\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
+                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
+                "pregunta": "¿Listo para continuar?",
+                "opciones": ["1. Ir al siguiente paso"]
+            }
         ],
         "final": {
             "mensaje": "✅ ¡Ya tienes tu ARL lista!\n\nRecuerda:\n- 🏥 ARL activa como trabajador independiente\n- 📄 Certificación en PDF sin contraseña\n- 📅 Fecha reciente (menos de 30 días)\n\n📌 ¿Qué desea hacer ahora?\n1. Ir a documentos\n2. Ir al registro en portal\n3. Ir al menú principal",
@@ -350,6 +368,15 @@ FLUJOS = {
                     "mensaje": "⏳ Si está esperando el resultado de su examen médico:\n\n1. Los resultados suelen tardar de 1 a 3 días hábiles.\n2. Consulte con la clínica o IPS donde se realizó el examen.\n3. Pregunte si el certificado se puede entregar en PDF.\n4. Asegúrese de que diga APTO para el cargo.\n5. Vigencia: 3 años.\n\n💡 Si el resultado dice 'Apto con restricciones', consulte con su supervisor."
                 }
             },
+            # ===== PASO DE AYUDA EXTERNA (justo antes del final) =====
+            {
+                "id": "ayuda_externa",
+                "titulo": "📌 ¿Sigues teniendo dudas?",
+                "contenido": "Si aún tienes dudas sobre el examen médico, te recomiendo ver este tutorial en YouTube:\n\n🔗 [LINK_EXAMEN_MEDICO_PENDIENTE]\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
+                "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
+                "pregunta": "¿Listo para continuar?",
+                "opciones": ["1. Ir al siguiente paso"]
+            }
         ],
         "final": {
             "mensaje": "✅ ¡Ya tienes tu examen médico listo!\n\nRecuerda:\n- 🏥 APTO para el cargo\n- 📄 PDF sin contraseña\n- 📅 Vigencia: 3 años\n\n📌 ¿Qué desea hacer ahora?\n1. Ir a documentos\n2. Ir al registro en portal\n3. Ir al menú principal",

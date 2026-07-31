@@ -91,6 +91,7 @@
         <div class="tabs-container">
             <a href="/" class="tab"><span class="tab-icon">🔍</span><span>Consultar mi estado</span></a>
             <a href="/consultas" class="tab active"><span class="tab-icon">📚</span><span>Preguntas Frecuentes</span></a>
+            <a href="/rut" class="tab"><span class="tab-icon">📄</span><span>Validador de RUT</span></a>
             <a href="/login" class="tab tab-admin"><span class="tab-icon">⚙️</span><span>Admin</span></a>
         </div>
     </nav>
@@ -168,21 +169,27 @@ Puedo ayudarte con los siguientes temas:
 📌 Escribe el número del tema o el nombre para comenzar.
 `;
 
-        function agregarMensaje(texto, tipo) {
-            const chatBox = document.getElementById('chat-box');
-            if (!chatBox) return;
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${tipo}-message`;
-            const time = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
-            const textoLimpio = texto.replace(/^\s+/, '');
-            messageDiv.innerHTML = `
-                <div class="message-content">${textoLimpio.replace(/\n/g, '<br>')}</div>
-                <span class="message-time">${time}</span>
-            `;
-            chatBox.appendChild(messageDiv);
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
+function agregarMensaje(texto, tipo) {
+    const chatBox = document.getElementById('chat-box');
+    if (!chatBox) return;
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${tipo}-message`;
+    const time = new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' });
 
+    // Convertir enlaces de texto a enlaces HTML
+    const textoConLinks = texto.replace(
+        /(https?:\/\/[^\s]+)/g,
+        '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+    );
+
+    const textoLimpio = textoConLinks.replace(/^\s+/, '');
+    messageDiv.innerHTML = `
+        <div class="message-content">${textoLimpio.replace(/\n/g, '<br>')}</div>
+        <span class="message-time">${time}</span>
+    `;
+    chatBox.appendChild(messageDiv);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
         function mostrarTyping() {
             const chatBox = document.getElementById('chat-box');
             if (!chatBox) return;
