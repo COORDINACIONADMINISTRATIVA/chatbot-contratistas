@@ -349,7 +349,7 @@ FLUJOS = {
             {
                 "id": "donde",
                 "titulo": "📍 Dónde hacer el examen médico",
-                "contenido": "Puede realizarlo en:\n- 🏥 ARL (Administradora de Riesgos Laborales)\n- 🏥 Clínicas ocupacionales\n- 🏥 IPS autorizadas\n\n🔹 Costo: entre $50,000 y $150,000",
+                "contenido": "Puede realizarlo en:\n- 🏥 ARL (Administradora de Riesgos Laborales)\n- 🏥 Clínicas ocupacionales\n- 🏥 IPS autorizadas\n\n🔹 Costo dependiendo de la entidad",
                 "detalle": "Consulte con su ARL, a veces cubren el examen. Pida cita para examen médico ocupacional y solicite el certificado en PDF.",
                 "pregunta": "¿Ya sabe dónde va a hacerlo?",
                 "opciones": ["✅ Sí, ya sé dónde", "🔍 Ayúdeme a encontrar", "🔙 Volver al menú"],

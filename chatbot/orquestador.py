@@ -2,6 +2,7 @@
 """
 Punto de entrada único del chatbot con sistema de flujo guiado
 VERSIÓN DEFINITIVA - Maneja respuestas "No" con detalles y redirige a ayuda externa
+VERSIÓN CORREGIDA - Maneja correctamente la opción "1. Ir al menú principal"
 """
 
 from .gestor_estado import gestor
@@ -317,7 +318,13 @@ def responder(mensaje, usuario="anonimo"):
             
             # Verificar si es el último paso
             if es_paso_final(flujo_id, paso_actual):
-                respuesta = obtener_mensaje_final(flujo_id) or "✅ ¡Has completado este tema!"
+                # Si es el último paso y el usuario escribió "1" o "siguiente"
+                if mensaje_limpio == "1":
+                    # Redirigir al menú principal
+                    respuesta = formatear_menu_principal()
+                else:
+                    # Si escribió "siguiente", mostrar el mensaje final
+                    respuesta = obtener_mensaje_final(flujo_id) or "✅ ¡Has completado este tema!"
                 gestor.resetear(usuario)
                 memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
                 return respuesta
@@ -334,12 +341,14 @@ def responder(mensaje, usuario="anonimo"):
             if es_paso_final(flujo_id, paso_actual):
                 respuesta = obtener_mensaje_final(flujo_id) or "✅ ¡Has completado este tema!"
                 gestor.resetear(usuario)
+                memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
+                return respuesta
             else:
                 gestor.avanzar_paso(usuario)
                 nuevo_paso = obtener_paso(flujo_id, estado['paso'])
                 respuesta = formatear_paso(flujo_id, nuevo_paso, estado['paso'], total)
-            memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
-            return respuesta
+                memoria.guardar_mensaje(usuario, respuesta, tipo="bot")
+                return respuesta
 
         # Mensaje no reconocido
         respuesta = formatear_error(mensaje_limpio)
