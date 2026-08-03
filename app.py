@@ -659,7 +659,6 @@ def consultar_contratista_api():
         return jsonify({'error': str(e)}), 500
 
 # ==================== API MI PROCESO ====================
-# ==================== API MI PROCESO (CORREGIDO) ====================
 @app.route('/api/mi-proceso', methods=['POST'])
 def mi_proceso():
     data = request.get_json()
@@ -701,8 +700,6 @@ def mi_proceso():
                     'solicitud_ariba': info.get('solicitud_ariba', '-'),  # <--- ESTO ES LO QUE IMPORTAAA
                     'tipo': 'resumen'
                 })
-        
-        # ... el resto del código (seguimiento) sigue igual ...
         
         if seguimiento:
             solpedidos = {}

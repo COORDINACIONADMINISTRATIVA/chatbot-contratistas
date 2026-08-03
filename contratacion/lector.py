@@ -50,7 +50,7 @@ class LectorContratistas:
                     self.columnas['fecha_fin'] = col
                 elif 'OBJETO' in col_upper and 'CONTRATO' in col_upper:
                     self.columnas['objeto'] = col
-                elif col_upper == 'CONTRATO ':
+                elif 'CONTRATO' in col_upper and 'OBJETO' not in col_upper:  # <--- CAMBIO AQUÍ
                     self.columnas['solicitud_ariba'] = col
 
             print(f"📋 Columnas mapeadas: {self.columnas}")
@@ -186,7 +186,7 @@ class LectorContratistas:
                 if col in registro and pd.notna(registro.get(col)):
                     info['objeto'] = str(registro.get(col, ''))
 
-            # ===== EXTRACCIÓN DE CONTRATO =====
+            # ===== EXTRACCIÓN DE CONTRATO (CORREGIDO) =====
             if 'solicitud_ariba' in self.columnas:
                 col = self.columnas['solicitud_ariba']
                 if col in registro and pd.notna(registro.get(col)):
@@ -194,8 +194,8 @@ class LectorContratistas:
                     # Limpiar caracteres especiales
                     valor = valor.replace('"', '').replace("'", '').strip()
                     
-                    # 1. Buscar CPS (ej: CPS 438-2025, CPS-438-2025)
-                    match_cps = re.search(r'(CPS[\s-]?\d{3,}[\s-]?\d{4})', valor.upper())
+                    # 1. Buscar CPS o DIEPO CPS (ej: CPS 438-2025, DIEPO CPS 768-2026)
+                    match_cps = re.search(r'(DIEPO\s*CPS|CPS|CONTRATO\s*DE\s*ARRENDAMIENTO|OTROSI)[\s\-]*\d{0,4}[\s\-]*\d{4}', valor.upper())
                     if match_cps:
                         info['solicitud_ariba'] = match_cps.group(0)
                     else:
@@ -204,8 +204,9 @@ class LectorContratistas:
                         if match_otrosi:
                             info['solicitud_ariba'] = match_otrosi.group(0)
                         else:
-                            # 3. Si no tiene CPS ni OTROSI, verificar si es "NO APLICA" o similar
+                            # 3. Si no tiene CPS ni OTROSI, verificar si es "NO APLICA"
                             if valor and 'NO APLICA' not in valor.upper():
+                                # Si tiene algún texto que parezca número de contrato, guardarlo
                                 info['solicitud_ariba'] = valor
                             # Si es "NO APLICA" o está vacío, queda como '-'
                             
