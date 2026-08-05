@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 from contratacion.lector_pdf import leer_pdf
-from contratacion.detector_marca import analizar_marca_agua_por_pca  # <--- IMPORTAR
+from contratacion.detector_marca import analizar_marca_agua_por_pca
 
 
 # ---------------------------------------------------------------------------
@@ -49,61 +49,75 @@ def _extraer_tipo_documento(texto):
 def _extraer_cedula(texto, tipo_documento):
     """
     Extrae la cédula/NIT de 6-10 dígitos.
-    Evita capturar el código del tipo de documento (ej: "13" de Cédula).
+    SOLO acepta números que estén asociados a campos específicos.
     """
-    # Método 1: Buscar justo después del tipo de documento
-    if tipo_documento:
-        # Buscar patrón: "Cédula de Ciudadanía" seguido de dígitos con espacios
-        patron = re.escape(tipo_documento) + r'\s+([\d\s]+)'
-        m = re.search(patron, texto, re.IGNORECASE)
-        if m:
-            digitos = re.sub(r'\D', '', m.group(1))
-            # Filtrar para obtener solo la cédula (6-10 dígitos)
-            # Si hay más de 10 dígitos, buscar la cédula real
-            if len(digitos) > 10:
-                # Buscar cualquier grupo de 6-10 dígitos dentro
-                cedula_match = re.search(r'\d{6,10}', digitos)
-                if cedula_match:
-                    return cedula_match.group()
-            elif 6 <= len(digitos) <= 10:
-                return digitos
+    # Método 1: Buscar "26. Número de Identificación" (el más confiable)
+    m = re.search(r'26\.\s*Número\s+de\s+Identificaci[oó]n\s*([\d\s]+)', texto, re.IGNORECASE)
+    if m:
+        digitos = re.sub(r'\D', '', m.group(1))
+        # Eliminar el prefijo de tipo de documento (1 o 2 dígitos al inicio)
+        if len(digitos) >= 10:
+            for i in range(1, 4):
+                if len(digitos[i:]) >= 6 and digitos[i:].isdigit():
+                    return digitos[i:]
+        if len(digitos) > 10:
+            return digitos[-10:]
+        if 6 <= len(digitos) <= 10:
+            return digitos
 
-    # Método 2: Buscar "Número de Identificación" seguido de dígitos
+    # Método 2: Buscar "Número de Identificación" genérico
     m = re.search(r'Número\s+de\s+Identificaci[oó]n\s*[:\n]?\s*([\d\s]+)', texto, re.IGNORECASE)
     if m:
         digitos = re.sub(r'\D', '', m.group(1))
+        if len(digitos) >= 10:
+            for i in range(1, 4):
+                if len(digitos[i:]) >= 6 and digitos[i:].isdigit():
+                    return digitos[i:]
+        if len(digitos) > 10:
+            return digitos[-10:]
         if 6 <= len(digitos) <= 10:
             return digitos
-        if len(digitos) > 10:
-            cedula_match = re.search(r'\d{6,10}', digitos)
-            if cedula_match:
-                return cedula_match.group()
 
     # Método 3: Buscar "NIT" seguido de dígitos
     m = re.search(r'NIT\s*[:\n]?\s*([\d\s]+)', texto, re.IGNORECASE)
     if m:
         digitos = re.sub(r'\D', '', m.group(1))
+        if len(digitos) >= 10:
+            for i in range(1, 4):
+                if len(digitos[i:]) >= 6 and digitos[i:].isdigit():
+                    return digitos[i:]
+        if len(digitos) > 10:
+            return digitos[-10:]
         if 6 <= len(digitos) <= 10:
             return digitos
 
-    # Método 4: Buscar en el formato "26. Número de Identificación"
-    m = re.search(r'26\.\s*Número\s+de\s+Identificaci[oó]n\s*([\d\s]+)', texto, re.IGNORECASE)
+    # Método 4: Buscar "Identificación" (sin número de campo)
+    m = re.search(r'Identificaci[oó]n\s*[:\n]?\s*([\d\s]+)', texto, re.IGNORECASE)
     if m:
         digitos = re.sub(r'\D', '', m.group(1))
+        if len(digitos) >= 10:
+            for i in range(1, 4):
+                if len(digitos[i:]) >= 6 and digitos[i:].isdigit():
+                    return digitos[i:]
+        if len(digitos) > 10:
+            return digitos[-10:]
         if 6 <= len(digitos) <= 10:
             return digitos
 
-    # Método 5: Fallback - buscar cualquier número de 6-10 dígitos
-    # que NO esté precedido por "1 3" (código de cédula)
-    m = re.search(r'(?<![1]\s[3]\s)(?:\d\s+){5,9}\d', texto)
+    # Método 5: Buscar "Documento" (para cédula de extranjería u otros)
+    m = re.search(r'Documento\s*[:\n]?\s*([\d\s]+)', texto, re.IGNORECASE)
     if m:
-        return re.sub(r'\D', '', m.group())
+        digitos = re.sub(r'\D', '', m.group(1))
+        if len(digitos) >= 10:
+            for i in range(1, 4):
+                if len(digitos[i:]) >= 6 and digitos[i:].isdigit():
+                    return digitos[i:]
+        if len(digitos) > 10:
+            return digitos[-10:]
+        if 6 <= len(digitos) <= 10:
+            return digitos
 
-    # Fallback final: cualquier número de 6-10 dígitos
-    m = re.search(r'\b\d{6,10}\b', texto)
-    if m:
-        return m.group()
-
+    # NO usar fallback genérico. Si no se encontró en los campos específicos, devolver None.
     return None
 
 
@@ -637,21 +651,23 @@ def generar_respuesta_final(resultados, contratista_info=None):
 
     # --- MARCA DE AGUA ---
     marca = resultados['marca_agua']
+    lineas.append("")
     if marca['estado'] == 'valido':
-        lineas.append("")
-        lineas.append(f"✅ Marca de agua: VÁLIDA (Copia/Certificado)")
+        lineas.append("🟢🟢🟢 MARCA DE AGUA: VÁLIDA (Copia/Certificado) 🟢🟢🟢")
+        lineas.append("   ✅ El sello de tu RUT es correcto.")
     elif marca['estado'] == 'invalido':
-        lineas.append("")
-        lineas.append(f"❌ Marca de agua: INVÁLIDA (En trámite/Borrador)")
+        lineas.append("🔴🔴🔴 MARCA DE AGUA: INVÁLIDA (En trámite/Borrador) 🔴🔴🔴")
+        lineas.append("   ❌ Tu RUT aún no está aprobado por la DIAN. Debes esperar.")
     elif marca['estado'] == 'revisar_manual':
-        lineas.append("")
-        lineas.append(f"⚠️ Marca de agua: DUDOSA (requiere revisión manual)")
+        lineas.append("🟡🟡🟡 MARCA DE AGUA: DUDOSA (requiere revisión manual) 🟡🟡🟡")
+        lineas.append("   ⚠️ El sistema no pudo determinar con certeza el sello.")
+        lineas.append("   🧐 Revisa el documento visualmente o vuélvelo a generar.")
     elif marca['estado'] == 'sin_marca':
-        lineas.append("")
-        lineas.append(f"❌ Marca de agua: NO DETECTADA")
+        lineas.append("🔴🔴🔴 MARCA DE AGUA: NO DETECTADA 🔴🔴🔴")
+        lineas.append("   ❌ No se encontró el sello de la DIAN. Verifica que sea un RUT oficial.")
     elif marca['estado'] == 'error':
-        lineas.append("")
-        lineas.append(f"💥 Error analizando la marca de agua: {marca.get('error', 'Desconocido')}")
+        lineas.append("💥💥💥 MARCA DE AGUA: ERROR DE ANÁLISIS 💥💥💥")
+        lineas.append(f"   ⚠️ {marca.get('error', 'Error desconocido')}")
 
     # Consejos útiles
     if not resultados['valido'] or marca['estado'] != 'valido':
