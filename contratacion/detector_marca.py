@@ -7,7 +7,7 @@ import os
 import cv2
 import numpy as np
 from pdf2image import convert_from_path
-from config import POPPLER_PATH  # <--- IMPORTAR LA RUTA
+import shutil
 
 # ============================================================
 # CONFIGURACIÓN (calibrada con RUTs reales)
@@ -26,6 +26,15 @@ BBOX_SELLO = (146, 700, 2474, 2201)
 UMBRAL_VALIDO = 6.0
 UMBRAL_INVALIDO = 4.5
 
+# Buscar poppler en el PATH
+POPPLER_PATH = None
+pdfinfo_path = shutil.which('pdfinfo')
+if pdfinfo_path:
+    POPPLER_PATH = os.path.dirname(pdfinfo_path)
+    print(f"✅ Poppler encontrado en: {POPPLER_PATH}")
+else:
+    print("⚠️ No se encontró poppler en el PATH")
+
 # ============================================================
 # FUNCIÓN PRINCIPAL
 # ============================================================
@@ -37,7 +46,9 @@ def analizar_marca_agua_por_pca(ruta_pdf, poppler_path=None):
     """
     try:
         # Convertir PDF a imagen
-        poppler_path = POPPLER_PATH
+        if poppler_path is None:
+            poppler_path = POPPLER_PATH
+        
         paginas = convert_from_path(ruta_pdf, dpi=DPI, poppler_path=poppler_path)
         img_pil = paginas[0]
         img_bgr = cv2.cvtColor(np.array(img_pil), cv2.COLOR_RGB2BGR)

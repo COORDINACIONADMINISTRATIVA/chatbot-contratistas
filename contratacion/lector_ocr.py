@@ -3,6 +3,9 @@ from config import TESSERACT_PATH, POPPLER_PATH
 import pytesseract
 from pdf2image import convert_from_path
 
+import shutil
+import os
+
 pytesseract.pytesseract.tesseract_cmd = TESSERACT_PATH
 
 
