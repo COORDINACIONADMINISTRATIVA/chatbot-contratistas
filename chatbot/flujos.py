@@ -2,6 +2,7 @@
 """
 Definición de todos los flujos conversacionales
 Cada flujo es una lista de pasos
+VERSIÓN CORREGIDA - Opción "Volver al inicio" y eliminación de precios
 """
 
 FLUJOS = {
@@ -85,7 +86,7 @@ FLUJOS = {
                 "contenido": "Si aún tienes dudas sobre el registro en el portal, te recomiendo ver este tutorial:\n\n🔗 https://uniminuto0-my.sharepoint.com/personal/coord_admin_rv_uniminuto_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fcoord%5Fadmin%5Frv%5Funiminuto%5Fedu%2FDocuments%2FDAF%2FVARIOS%2FPLANTILLAS%20IMPORTANTES%2FProceso%20para%20Registro%20en%20Plataforma%2D20260223%5F170351%2DGrabaci%C3%B3n%20de%20la%20reuni%C3%B3n%2Emp4&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E44292558%2D9973%2D4a2a%2D9769%2D5a5d1fa63ef1&ct=1785532073546&or=OWA%2DNT%2DMail&cid=dd0a5fe8%2D1ba6%2D696c%2D0456%2Dc616eff8828f&ga=1&LOF=1\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
                 "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en SharePoint.",
                 "pregunta": "¿Listo para continuar?",
-                "opciones": ["1. Ir al siguiente paso"]
+                "opciones": ["🏠 Volver al inicio"]  # <--- CAMBIO AQUÍ
             }
         ],
         "final": {
@@ -170,12 +171,12 @@ FLUJOS = {
             {
                 "id": "examen_medico",
                 "titulo": "🏥 Examen médico ocupacional",
-                "contenido": "📌 REQUISITOS:\n- Vigencia máxima de 3 años\n- Debe indicar que es APTO para el cargo\n- Realícelo en ARL, clínica ocupacional o IPS autorizada\n- Costo: entre $50,000 y $150,000",
+                "contenido": "📌 REQUISITOS:\n- Vigencia máxima de 3 años\n- Debe indicar que es APTO para el cargo\n- Realícelo en ARL, clínica ocupacional o IPS autorizada\n- Costo: depende de la entidad y los exámenes requeridos",
                 "detalle": "Si no sabe dónde hacerlo, consulte con su ARL o con el área de talento humano de UNIMINUTO Virtual. Si su examen tiene más de 3 años, debe renovarlo.",
                 "pregunta": "¿Ya tiene su examen médico al día?",
                 "opciones": ["✅ Sí, lo tengo", "📍 Necesito dónde hacerlo", "🔙 Volver a documentos"],
                 "respuesta_no": {
-                    "mensaje": "📍 Si necesita hacer el examen médico:\n\n1. Puede realizarlo en:\n   - ARL (Administradora de Riesgos Laborales)\n   - Clínicas ocupacionales\n   - IPS autorizadas\n\n2. Pida una cita para examen médico ocupacional.\n3. El certificado debe indicar que es APTO para el cargo.\n4. Costo aproximado: $50,000 - $150,000.\n5. Solicite el certificado en PDF sin contraseña.\n\n💡 Consulte con su ARL, a veces cubren el examen.\nSi no sabe dónde hacerlo, consulte con su ARL o con el área de talento humano de UNIMINUTO Virtual."
+                    "mensaje": "📍 Si necesita hacer el examen médico:\n\n1. Puede realizarlo en:\n   - ARL (Administradora de Riesgos Laborales)\n   - Clínicas ocupacionales\n   - IPS autorizadas\n\n2. Pida una cita para examen médico ocupacional.\n3. El certificado debe indicar que es APTO para el cargo.\n4. Costo aproximado: depende de la entidad.\n5. Solicite el certificado en PDF sin contraseña.\n\n💡 Consulte con su ARL, a veces cubren el examen.\nSi no sabe dónde hacerlo, consulte con su ARL o con el área de talento humano de UNIMINUTO Virtual."
                 }
             },
             # ===== PASO DE AYUDA EXTERNA (justo antes del final) =====
@@ -185,7 +186,7 @@ FLUJOS = {
                 "contenido": "Si aún tienes dudas sobre los documentos requeridos, te recomiendo ver este tutorial:\n\n🔗 https://uniminuto0-my.sharepoint.com/personal/coord_admin_rv_uniminuto_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fcoord%5Fadmin%5Frv%5Funiminuto%5Fedu%2FDocuments%2FDAF%2FVARIOS%2FPLANTILLAS%20IMPORTANTES%2FProceso%20para%20Registro%20en%20Plataforma%2D20260223%5F170351%2DGrabaci%C3%B3n%20de%20la%20reuni%C3%B3n%2Emp4&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E44292558%2D9973%2D4a2a%2D9769%2D5a5d1fa63ef1&ct=1785532073546&or=OWA%2DNT%2DMail&cid=dd0a5fe8%2D1ba6%2D696c%2D0456%2Dc616eff8828f&ga=1&LOF=1\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
                 "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en SharePoint.",
                 "pregunta": "¿Listo para continuar?",
-                "opciones": ["1. Ir al siguiente paso"]
+                "opciones": ["🏠 Volver al inicio"]  # <--- CAMBIO AQUÍ
             }
         ],
         "final": {
@@ -263,7 +264,7 @@ FLUJOS = {
                 "contenido": "Si aún tienes dudas sobre la actualización del RUT, te recomiendo ver este tutorial en YouTube:\n\n🔗 https://www.youtube.com/watch?v=bbZbULl1l8Y\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
                 "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
                 "pregunta": "¿Listo para continuar?",
-                "opciones": ["1. Ir al siguiente paso"]
+                "opciones": ["🏠 Volver al inicio"]  # <--- CAMBIO AQUÍ
             }
         ],
         "final": {
@@ -319,7 +320,7 @@ FLUJOS = {
                 "contenido": "Si aún tienes dudas sobre la ARL, te recomiendo ver este tutorial en YouTube:\n\n🔗 https://youtu.be/S-ps-ctVbAU?si=mTQZH4p9SGvYmWr9\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
                 "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
                 "pregunta": "¿Listo para continuar?",
-                "opciones": ["1. Ir al siguiente paso"]
+                "opciones": ["🏠 Volver al inicio"]  # <--- CAMBIO AQUÍ
             }
         ],
         "final": {
@@ -343,13 +344,13 @@ FLUJOS = {
                 "pregunta": "¿Ya tiene examen médico o necesita hacerlo?",
                 "opciones": ["✅ Ya lo tengo", "📍 Necesito hacerlo", "🔙 Volver al menú"],
                 "respuesta_no": {
-                    "mensaje": "📍 Si necesita hacer el examen médico:\n\n1. Puede realizarlo en:\n   - ARL (Administradora de Riesgos Laborales)\n   - Clínicas ocupacionales\n   - IPS autorizadas\n\n2. Pida una cita para examen médico ocupacional.\n3. El certificado debe indicar que es APTO para el cargo.\n4. Costo aproximado: $50,000 - $150,000.\n5. Solicite el certificado en PDF sin contraseña.\n\n💡 Consulte con su ARL, a veces cubren el examen.\nSi no sabe dónde hacerlo, consulte con su ARL o con el área de talento humano de UNIMINUTO Virtual."
+                    "mensaje": "📍 Si necesita hacer el examen médico:\n\n1. Puede realizarlo en:\n   - ARL (Administradora de Riesgos Laborales)\n   - Clínicas ocupacionales\n   - IPS autorizadas\n\n2. Pida una cita para examen médico ocupacional.\n3. El certificado debe indicar que es APTO para el cargo.\n4. Costo aproximado: depende de la entidad.\n5. Solicite el certificado en PDF sin contraseña.\n\n💡 Consulte con su ARL, a veces cubren el examen.\nSi no sabe dónde hacerlo, consulte con su ARL o con el área de talento humano de UNIMINUTO Virtual."
                 }
             },
             {
                 "id": "donde",
                 "titulo": "📍 Dónde hacer el examen médico",
-                "contenido": "Puede realizarlo en:\n- 🏥 ARL (Administradora de Riesgos Laborales)\n- 🏥 Clínicas ocupacionales\n- 🏥 IPS autorizadas\n\n🔹 Costo dependiendo de la entidad",
+                "contenido": "Puede realizarlo en:\n- 🏥 ARL (Administradora de Riesgos Laborales)\n- 🏥 Clínicas ocupacionales\n- 🏥 IPS autorizadas\n\n🔹 Costo: depende de la entidad y los exámenes requeridos",
                 "detalle": "Consulte con su ARL, a veces cubren el examen. Pida cita para examen médico ocupacional y solicite el certificado en PDF.",
                 "pregunta": "¿Ya sabe dónde va a hacerlo?",
                 "opciones": ["✅ Sí, ya sé dónde", "🔍 Ayúdeme a encontrar", "🔙 Volver al menú"],
@@ -375,7 +376,7 @@ FLUJOS = {
                 "contenido": "Si aún tienes dudas sobre el examen médico, te recomiendo ver este tutorial en YouTube:\n\n🔗 [LINK_EXAMEN_MEDICO_PENDIENTE]\n\nSi después de ver el tutorial sigues con problemas, por favor comunícate con tu supervisor para recibir asistencia personalizada.\n\nNo te preocupes, es normal tener dudas. Tu supervisor está ahí para ayudarte.\n\n💡 Para continuar, escribe \"menú\" para volver al inicio.",
                 "detalle": "Este paso cierra la ayuda del chatbot y te redirige a tu supervisor o a un tutorial en YouTube.",
                 "pregunta": "¿Listo para continuar?",
-                "opciones": ["1. Ir al siguiente paso"]
+                "opciones": ["🏠 Volver al inicio"]  # <--- CAMBIO AQUÍ
             }
         ],
         "final": {

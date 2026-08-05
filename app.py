@@ -28,38 +28,7 @@ from dotenv import load_dotenv
 import re
 from datetime import datetime
 
-def limpiar_fecha(fecha):
-    """
-    Convierte una fecha en formato '2026-08-01 00:00:00' a '01/08/2026'
-    """
-    if not fecha:
-        return "01/08/2026"  # Fecha por defecto
-    
-    # Si es string, intentar convertir
-    if isinstance(fecha, str):
-        # Intentar extraer solo la parte de la fecha (YYYY-MM-DD)
-        match = re.search(r'(\d{4})-(\d{2})-(\d{2})', fecha)
-        if match:
-            anio, mes, dia = match.groups()
-            return f"{dia}/{mes}/{anio}"
-        
-        # Si ya tiene formato DD/MM/AAAA, devolverla igual
-        if re.search(r'\d{2}/\d{2}/\d{4}', fecha):
-            return fecha
-    
-    # Si es datetime o timestamp, convertirlo
-    try:
-        if isinstance(fecha, datetime):
-            return fecha.strftime('%d/%m/%Y')
-        # Si es pandas Timestamp
-        if hasattr(fecha, 'strftime'):
-            return fecha.strftime('%d/%m/%Y')
-    except:
-        pass
-    
-    return "01/08/2026"  # Fecha por defecto
-
-
+# ==================== FUNCIÓN PARA LIMPIAR EL OBJETO DEL CONTRATO ====================
 def limpiar_objeto(objeto):
     """
     Limpia el objeto del contrato:
@@ -87,7 +56,6 @@ def limpiar_objeto(objeto):
         return "Prestación de servicios profesionales como experto disciplinar."
     
     return texto
-
 
 # ==================== CARGAR .ENV ====================
 try:
@@ -640,13 +608,17 @@ def consultar_contratista_api():
             # ===== USAR obtener_info_contratista PARA EXTRAER EL CONTRATO =====
             info = lector.obtener_info_contratista(r)
             
+            # ===== LIMPIAR EL OBJETO DEL CONTRATO =====
+            objeto_limpio = limpiar_objeto(info.get('objeto', ''))
+            
             contratistas.append({
                 'nombre': r.get('NOMBRE DE CONTRATISTA', 'Sin nombre'),
                 'cedula': r.get('CEDULA', ''),
                 'estado': r.get('ESTADO', 'Sin estado'),
                 'observacion': r.get('OBSERVACIÓN', 'Sin observaciones'),
                 'año': str(r.get('AÑO', '')),
-                'solicitud_ariba': info.get('solicitud_ariba', ''),  # <--- CORREGIDO
+                'solicitud_ariba': info.get('solicitud_ariba', ''),
+                'objeto': objeto_limpio,  # <--- NUEVO CAMPO
                 'tipo': 'resumen'
             })
         
@@ -690,14 +662,17 @@ def mi_proceso():
                     else:
                         obs_traducida = "📋 Sin información adicional"
                 
-                # ===== CONSTRUIR EL JSON USANDO info COMPLETO =====
+                # ===== LIMPIAR EL OBJETO DEL CONTRATO =====
+                objeto_limpio = limpiar_objeto(info.get('objeto', ''))
+                
                 contratistas.append({
                     'nombre': info.get('nombre', 'Sin nombre'),
-                    'cedula': info.get('cedula', cedula),  # Usar info o cedula original
+                    'cedula': info.get('cedula', cedula),
                     'estado': estado_traducido,
                     'observacion': obs_traducida,
                     'año': info.get('año', ''),
-                    'solicitud_ariba': info.get('solicitud_ariba', '-'),  # <--- ESTO ES LO QUE IMPORTAAA
+                    'solicitud_ariba': info.get('solicitud_ariba', '-'),
+                    'objeto': objeto_limpio,  # <--- NUEVO CAMPO
                     'tipo': 'resumen'
                 })
         

@@ -47,6 +47,34 @@
             line-height: 1.7; white-space: pre-wrap;
         }
         .historial-box strong { color: var(--azul-uniminuto); }
+
+        /* ==================== NUEVO: OBJETO DEL CONTRATO ==================== */
+        .objeto-box {
+            background: #f8faff;
+            border-left: 4px solid var(--azul-brillante);
+            padding: 16px 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+            line-height: 1.6;
+            font-size: 0.95em;
+        }
+        .objeto-box strong {
+            color: var(--azul-uniminuto);
+            display: block;
+            margin-bottom: 6px;
+            font-size: 1em;
+            font-weight: 600;
+        }
+        body.dark-mode .objeto-box {
+            background: #1a2a3a;
+            border-left-color: #00A3E0;
+        }
+        body.dark-mode .objeto-box strong {
+            color: #00A3E0;
+        }
+
         @media (max-width: 768px) {
             .cedula-input-group { flex-direction: column; }
             .cedula-input-group input, .cedula-input-group button { width: 100%; }
@@ -163,11 +191,16 @@
                         html += '<div class="info-item"><strong>📦 Número de contrato </strong>' + (c.solicitud_ariba || '-') + '</div>';
                         html += '</div>';
                         html += '<div class="estado-box"><strong>📊 Estado actual:</strong><br>' + (c.estado || 'Sin estado registrado') + '</div>';
+                        
+                        // ===== NUEVO: MOSTRAR OBJETO DEL CONTRATO =====
+                        if (c.objeto && c.objeto.length > 0) {
+                            html += '<div class="objeto-box"><strong>📝 OBJETO DEL CONTRATO</strong>' + c.objeto + '</div>';
+                        }
+                        
                         html += '<h3>📝 Historial del Proceso</h3>';
                         html += '<div class="historial-box">' + (c.observacion || '📋 No hay información adicional registrada en este momento.') + '</div>';
                         html += '</div>';
                     }
-                    // ===== ELIMINADO: else if (c.tipo === 'seguimiento') =====
                 });
                 
                 resultadoDiv.innerHTML = html;

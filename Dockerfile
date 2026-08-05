@@ -9,6 +9,10 @@ RUN apt-get update && apt-get install -y \
     g++ \
     && rm -rf /var/lib/apt/lists/*
 
+# Configurar variables de entorno para Tesseract y Poppler
+ENV TESSERACT_PATH=/usr/bin/tesseract
+ENV POPPLER_PATH=/usr/bin
+
 WORKDIR /app
 
 COPY requirements.txt .

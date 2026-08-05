@@ -3,6 +3,7 @@ import json
 from datetime import datetime
 
 from contratacion.lector_pdf import leer_pdf
+from contratacion.detector_marca import analizar_marca_agua_por_pca  # <--- IMPORTAR
 
 
 # ---------------------------------------------------------------------------
@@ -540,24 +541,137 @@ class ValidadorRUT:
         return "\n".join(lineas)
 
 
-def validar_rut_archivo(ruta_pdf, cedula_contratista):
+# ===========================================================================
+# NUEVO: FUNCIÓN PRINCIPAL CON MARCA DE AGUA INTEGRADA
+# ===========================================================================
+def validar_rut_archivo(ruta_pdf, cedula_contratista=None, poppler_path=None):
     from contratacion.lector import lector
 
+    # 1. Extraer datos del RUT (texto)
     validador = ValidadorRUT()
+    texto = validador.extraer_texto_pdf(ruta_pdf)
+    
+    if not texto:
+        return "❌ No se pudo leer el PDF (¿es una imagen escaneada sin OCR disponible?)", {}
+
+    datos = extraer_datos_rut(texto)
+    
+    # 2. Analizar marca de agua (imagen) usando PCA
+    resultado_marca = analizar_marca_agua_por_pca(ruta_pdf, poppler_path)
+    
+    # 3. Obtener información del contratista (si se proporcionó cédula)
     contratista_info = None
     if cedula_contratista:
         registros = lector.buscar_por_cedula(cedula_contratista)
         if registros:
             contratista_info = lector.obtener_info_contratista(registros[0])
 
-    resultados = validador.analizar_rut(ruta_pdf, contratista_info, cedula_contratista)
-
-    # Imprime en consola del servidor los datos leídos, en JSON, junto al análisis
+    # 4. Validar las reglas de negocio (actividad económica, vigencia, etc.)
+    resultados_validacion = validador.analizar_rut(ruta_pdf, contratista_info, cedula_contratista)
+    
+    # 5. Combinar todo en un solo resultado
+    datos_publicos = {k: v for k, v in datos.items() if not k.startswith('_') and k not in ['marca_agua', 'marca_agua_detalle']}
+    resultados_validacion['datos_extraidos'] = datos_publicos
+    
+    # 6. Agregar el resultado de la marca de agua a los resultados
+    resultados_validacion['marca_agua'] = resultado_marca
+    
+    # 7. Generar la respuesta final
+    respuesta = generar_respuesta_final(resultados_validacion, contratista_info)
+    
+    # Imprimir en consola para debug
     print("=" * 60)
     print("📄 DATOS EXTRAÍDOS DEL RUT (JSON)")
     print("=" * 60)
-    print(json.dumps(resultados.get('datos_extraidos', {}), ensure_ascii=False, indent=2))
+    print(json.dumps(datos_publicos, ensure_ascii=False, indent=2))
     print("=" * 60)
+    print("📊 MARCA DE AGUA:", resultado_marca)
+    print("=" * 60)
+    
+    return respuesta, resultados_validacion
 
-    respuesta = validador.generar_respuesta(resultados, contratista_info)
-    return respuesta, resultados
+
+def generar_respuesta_final(resultados, contratista_info=None):
+    """
+    Genera la respuesta final combinando:
+    - Datos del RUT (éxitos, errores, advertencias)
+    - Marca de agua (válida, inválida, etc.)
+    """
+    lineas = []
+
+    # Información del contratista
+    if contratista_info and contratista_info.get('nombre'):
+        lineas.append(f"👤 Contratista: {contratista_info['nombre']}")
+        if contratista_info.get('cedula'):
+            lineas.append(f"🆔 Cédula: {contratista_info['cedula']}")
+        lineas.append("")
+
+    # Veredicto general
+    if resultados['valido'] and resultados['marca_agua']['estado'] == 'valido':
+        lineas.append("✅ ¡Tu RUT está completo y listo para subir!")
+    else:
+        lineas.append("⚠️ Tu RUT tiene detalles que revisar:")
+
+    lineas.append("")
+
+    # --- DATOS DEL RUT ---
+    # Éxitos
+    if resultados['exitos']:
+        lineas.append("✅ Información válida:")
+        for e in resultados['exitos']:
+            lineas.append(f"  {e}")
+
+    # Errores
+    if resultados['errores']:
+        lineas.append("")
+        lineas.append("❌ Errores a corregir:")
+        for e in resultados['errores']:
+            lineas.append(f"  {e}")
+
+    # Advertencias
+    if resultados['advertencias']:
+        lineas.append("")
+        lineas.append("⚠️ Advertencias:")
+        for a in resultados['advertencias']:
+            lineas.append(f"  {a}")
+
+    # --- MARCA DE AGUA ---
+    marca = resultados['marca_agua']
+    if marca['estado'] == 'valido':
+        lineas.append("")
+        lineas.append(f"✅ Marca de agua: VÁLIDA (Copia/Certificado)")
+    elif marca['estado'] == 'invalido':
+        lineas.append("")
+        lineas.append(f"❌ Marca de agua: INVÁLIDA (En trámite/Borrador)")
+    elif marca['estado'] == 'revisar_manual':
+        lineas.append("")
+        lineas.append(f"⚠️ Marca de agua: DUDOSA (requiere revisión manual)")
+    elif marca['estado'] == 'sin_marca':
+        lineas.append("")
+        lineas.append(f"❌ Marca de agua: NO DETECTADA")
+    elif marca['estado'] == 'error':
+        lineas.append("")
+        lineas.append(f"💥 Error analizando la marca de agua: {marca.get('error', 'Desconocido')}")
+
+    # Consejos útiles
+    if not resultados['valido'] or marca['estado'] != 'valido':
+        lineas.append("")
+        lineas.append("📌 ¿Qué hacer?")
+        
+        if not resultados['valido']:
+            errores_texto = " ".join(resultados['errores']).lower()
+            if any(p in errores_texto for p in ['trámite', 'tramite']):
+                lineas.append("  • Espera a tener 'Actualización' o 'Copia', no 'En trámite'")
+            if any(p in errores_texto for p in ['actividad', '8560']):
+                lineas.append("  • Agrega actividad económica 8560 en la DIAN (educación)")
+            if any(p in errores_texto for p in ['días', 'vigente', 'antiguo']):
+                lineas.append("  • Saca un RUT actualizado (menos de 30 días de generación)")
+            if any(p in errores_texto for p in ['cédula', 'cedula', 'coincide']):
+                lineas.append("  • Verifica que el RUT sea tuyo y la cédula coincida")
+        
+        if marca['estado'] == 'invalido':
+            lineas.append("  • El RUT está 'En trámite' o es 'Borrador'. Debes esperar a que la DIAN lo apruebe.")
+        elif marca['estado'] == 'sin_marca':
+            lineas.append("  • No se detectó la marca de agua. Asegúrate de que el RUT sea un documento oficial de la DIAN.")
+
+    return "\n".join(lineas)
