@@ -1,31 +1,31 @@
+# Usa una imagen base de Python
 FROM python:3.10-slim
 
-# Instalar dependencias del sistema
-RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    tesseract-ocr-spa \
-    poppler-utils \
-    gcc \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
-
-# Configurar variables de entorno para Tesseract y Poppler
-ENV TESSERACT_PATH=/usr/bin/tesseract
-ENV POPPLER_PATH=/usr/bin
-
+# Establece el directorio de trabajo
 WORKDIR /app
 
+# Instala dependencias del sistema (OpenCV, poppler, etc.)
+RUN apt-get update && apt-get install -y \
+    poppler-utils \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copia los archivos de requisitos primero (para caché de Docker)
 COPY requirements.txt .
 
-# Instalar torch sin CUDA (necesario para sentence-transformers)
-RUN pip install torch==2.0.1 --index-url https://download.pytorch.org/whl/cpu
-
+# Instala dependencias de Python
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copia el resto del código
 COPY . .
 
-RUN mkdir -p uploads
-
+# Expone el puerto 5000
 EXPOSE 5000
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "120", "app:app"]
+# Comando para ejecutar la app
+CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000"]
