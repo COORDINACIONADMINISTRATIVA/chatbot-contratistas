@@ -445,12 +445,12 @@ class ValidadorRUT:
         resultados['datos_extraidos'] = datos_publicos
 
         # --- Marca de agua (solo para validación, no se muestra) ---
-        if datos['marca_agua'] == 'en_tramite':
-            resultados['errores'].append(f"❌ {datos['marca_agua_detalle']}")
-        elif datos['marca_agua'] == 'valido':
-            resultados['exitos'].append(f"✅ Marca de agua: {datos['marca_agua_detalle']} (válido)")
-        else:
-            resultados['advertencias'].append(f"⚠️ {datos['marca_agua_detalle']}")
+       # if datos['marca_agua'] == 'en_tramite':
+         #   resultados['errores'].append(f"❌ {datos['marca_agua_detalle']}")
+        #elif datos['marca_agua'] == 'valido':
+          #  resultados['exitos'].append(f"✅ Marca de agua: {datos['marca_agua_detalle']} (válido)")
+        #else:
+         #   resultados['advertencias'].append(f"⚠️ {datos['marca_agua_detalle']}")
 
         # --- Actividad económica ---
         codigos = [a['codigo'] for a in datos['actividades_economicas']]
