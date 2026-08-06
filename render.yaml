@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: chatbot-contratistas
+    runtime: image
+    repo: https://github.com/COORDINACIONADMINISTRATIVA/chatbot-contratistas
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12

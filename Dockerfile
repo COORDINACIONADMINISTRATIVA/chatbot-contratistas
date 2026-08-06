@@ -13,15 +13,14 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Instala pip y gunicorn primero (para que no falle)
+RUN pip install --upgrade pip
+RUN pip install gunicorn
+
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# ⚠️ Asegura que gunicorn esté instalado
-RUN pip install gunicorn
 
 COPY . .
 
 EXPOSE 5000
-
-# El CMD se ejecutará si el Start Command está vacío
 CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000", "--workers=1", "--threads=2"]
