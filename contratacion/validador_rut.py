@@ -1,7 +1,8 @@
 import re
 import json
 from datetime import datetime
-
+import cv2
+from contratacion.detector_marca import analizar_marca_agua_por_pca
 from contratacion.lector_pdf import leer_pdf
 from contratacion.detector_marca import analizar_marca_agua_por_pca
 
