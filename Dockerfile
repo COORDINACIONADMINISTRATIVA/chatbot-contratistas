@@ -17,3 +17,5 @@ EXPOSE 5000
 
 # El CMD se ejecutará si el Start Command está vacío
 CMD ["gunicorn", "app:app", "--bind", "0.0.0.0:5000"]
+
+RUN pip install gunicorn
