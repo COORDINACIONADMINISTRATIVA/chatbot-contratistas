@@ -2,6 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+# Instala dependencias del sistema (incluyendo compiladores para pandas)
 RUN apt-get update && apt-get install -y \
     poppler-utils \
     libgl1 \
@@ -10,6 +11,9 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libxrender-dev \
     libgomp1 \
+    build-essential \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
