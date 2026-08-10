@@ -59,8 +59,11 @@
                 
                 if (data.success) {
                     console.log('✅ Login exitoso');
-                    localStorage.setItem('isLoggedIn', 'true');
+                    
+                    // Guardar el token y los datos del usuario en localStorage
+                    localStorage.setItem('jwt_token', data.token);
                     localStorage.setItem('userRole', data.admin.rol);
+                    localStorage.setItem('userName', data.admin.nombre);
                     
                     errorMsg.style.color = '#28a745';
                     errorMsg.textContent = '✅ Redirigiendo...';

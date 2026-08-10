@@ -10,6 +10,7 @@ import hashlib
 import time
 import logging
 import re
+import jwt
 from datetime import datetime, timedelta
 from functools import wraps
 from collections import defaultdict
@@ -20,13 +21,16 @@ import bcrypt
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-
-from contratacion.lector_seguimiento import lector_seguimiento
-
 from dotenv import load_dotenv
-
+from contratacion.lector_seguimiento import lector_seguimiento
+from flask import request, jsonify
+from dotenv import load_dotenv
 import re
 from datetime import datetime
+
+load_dotenv()
+
+JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'clave_por_defecto_solo_para_desarrollo')
 
 # ==================== FUNCIÓN PARA LIMPIAR EL OBJETO DEL CONTRATO ====================
 def limpiar_objeto(objeto):
@@ -98,6 +102,79 @@ from database.db import get_connection, init_db
 from chatbot.orquestador import responder
 from contratacion.lector import lector
 from contratacion.intérprete import traducir_observacion, traducir_estado
+
+def generar_token(usuario_id, usuario_nombre, rol):
+    """
+    Genera un token JWT con la información del usuario.
+    """
+    payload = {
+        'id': usuario_id,
+        'nombre': usuario_nombre,
+        'rol': rol,
+        'exp': datetime.utcnow() + timedelta(hours=24)  # El token expira en 24 horas
+    }
+    token = jwt.encode(payload, JWT_SECRET_KEY, algorithm='HS256')
+    return token
+
+def verificar_token(token):
+    """
+    Verifica si el token es válido y devuelve el payload.
+    """
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None  # Token expirado
+    except jwt.InvalidTokenError:
+        return None  # Token inválido
+
+def generar_token(usuario_id, usuario_nombre, rol):
+    """
+    Genera un token JWT con la información del usuario.
+    """
+    payload = {
+        'id': usuario_id,
+        'nombre': usuario_nombre,
+        'rol': rol,
+        'exp': datetime.utcnow() + timedelta(hours=24)  # El token expira en 24 horas
+    }
+    token = jwt.encode(payload, JWT_SECRET_KEY, algorithm='HS256')
+    return token
+
+def verificar_token(token):
+    """
+    Verifica si el token es válido y devuelve el payload.
+    """
+    try:
+        payload = jwt.decode(token, JWT_SECRET_KEY, algorithms=['HS256'])
+        return payload
+    except jwt.ExpiredSignatureError:
+        return None  # Token expirado
+    except jwt.InvalidTokenError:
+        return None  # Token inválido
+
+def jwt_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
+        
+        # Buscar el token en el encabezado Authorization
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+        
+        if not token:
+            return jsonify({'error': 'Token no proporcionado'}), 401
+        
+        payload = verificar_token(token)
+        if not payload:
+            return jsonify({'error': 'Token inválido o expirado'}), 401
+        
+        # Agregar el payload a la petición para usarlo en la ruta
+        request.jwt_payload = payload
+        return f(*args, **kwargs)
+    
+    return decorated
 
 # ==================== FUNCIÓN ENVIAR CORREO ====================
 def enviar_correo(destinatario, asunto, cuerpo):
@@ -580,6 +657,103 @@ def chat():
         'requiere_humano': False,
         'timestamp': datetime.now().isoformat()
     })
+
+@app.route('/api/admin/login', methods=['POST'])
+def admin_login():
+    if not request.is_json:
+        return jsonify({'success': False, 'error': 'Se requiere JSON'}), 400
+    
+    data = request.get_json()
+    if not data:
+        return jsonify({'success': False, 'error': 'No se recibieron datos'}), 400
+    
+    usuario = data.get('usuario')
+    contrasena = data.get('contrasena')
+    
+    if not usuario or not contrasena:
+        return jsonify({'success': False, 'error': 'Faltan usuario o contraseña'}), 400
+    
+    ip = request.remote_addr
+    now = datetime.now()
+    login_attempts[ip] = [t for t in login_attempts[ip] if now - t < timedelta(minutes=5)]
+    if len(login_attempts[ip]) >= 5:
+        logging.warning(f"Rate limit excedido para IP {ip}")
+        return jsonify({'success': False, 'error': 'Demasiados intentos. Espera 5 minutos.'}), 429
+    
+    try:
+        conn = get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM administradores WHERE usuario = ?', (usuario,))
+        admin = cursor.fetchone()
+        conn.close()
+        
+        if not admin:
+            login_attempts[ip].append(now)
+            logging.warning(f"Login fallido: usuario '{usuario}' no existe desde {request.remote_addr}")
+            return jsonify({'success': False, 'error': 'Credenciales inválidas'}), 401
+        
+        try:
+            if bcrypt.checkpw(contrasena.encode(), admin['contrasena'].encode()):
+                login_attempts[ip] = []
+                
+                # Generar el token JWT
+                token = generar_token(
+                    usuario_id=admin['id'],
+                    usuario_nombre=admin['nombre'],
+                    rol=admin['usuario']  # 'admin' o 'supervisor'
+                )
+                
+                logging.info(f"Login exitoso: {usuario} desde {request.remote_addr}")
+                
+                return jsonify({
+                    'success': True,
+                    'token': token,
+                    'admin': {
+                        'id': admin['id'],
+                        'usuario': admin['usuario'],
+                        'nombre': admin['nombre'],
+                        'rol': admin['usuario']
+                    }
+                })
+        except ValueError:
+            import hashlib
+            contrasena_hash_sha256 = hashlib.sha256(contrasena.encode()).hexdigest()
+            if admin['contrasena'] == contrasena_hash_sha256:
+                nuevo_hash = bcrypt.hashpw(contrasena.encode(), bcrypt.gensalt()).decode()
+                conn = get_connection()
+                cursor = conn.cursor()
+                cursor.execute('UPDATE administradores SET contrasena = ? WHERE id = ?', (nuevo_hash, admin['id']))
+                conn.commit()
+                conn.close()
+                
+                login_attempts[ip] = []
+                
+                token = generar_token(
+                    usuario_id=admin['id'],
+                    usuario_nombre=admin['nombre'],
+                    rol=admin['usuario']
+                )
+                
+                logging.info(f"Login exitoso (migrado a bcrypt): {usuario} desde {request.remote_addr}")
+                
+                return jsonify({
+                    'success': True,
+                    'token': token,
+                    'admin': {
+                        'id': admin['id'],
+                        'usuario': admin['usuario'],
+                        'nombre': admin['nombre'],
+                        'rol': admin['usuario']
+                    }
+                })
+        
+        login_attempts[ip].append(now)
+        logging.warning(f"Login fallido: contraseña incorrecta para {usuario} desde {request.remote_addr}")
+        return jsonify({'success': False, 'error': 'Credenciales inválidas'}), 401
+        
+    except Exception as e:
+        logging.error(f"Error en login: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
 # ==================== API CONTRATISTAS ====================
 @app.route('/api/contratista', methods=['POST'])

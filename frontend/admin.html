@@ -491,8 +491,8 @@
         });
 
         async function verificarSesion() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-            if (isLoggedIn !== 'true') {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) {
                 window.location.href = '/login';
                 return;
             }
@@ -500,7 +500,11 @@
             try {
                 const r = await fetch('/api/admin/estadisticas-contratistas', {
                     credentials: 'include',
-                    cache: 'no-store'
+                    cache: 'no-store',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 if (r.ok) {
@@ -508,7 +512,9 @@
                     mostrarDashboard();
                 } else if (r.status === 401) {
                     console.log('Sesión expirada');
-                    localStorage.clear();
+                    localStorage.removeItem('jwt_token');
+                    localStorage.removeItem('userRole');
+                    localStorage.removeItem('userName');
                     window.location.href = '/login';
                 } else {
                     mostrarError('Error al cargar: ' + r.status);
@@ -610,8 +616,17 @@
         }
 
         async function cargarEstadisticasSilencioso() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+            
             try {
-                const r = await fetch('/api/admin/estadisticas-contratistas', {credentials: 'include'});
+                const r = await fetch('/api/admin/estadisticas-contratistas', {
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
                 if (r.ok) {
                     stats = await r.json();
                     actualizarVista();
@@ -621,8 +636,17 @@
         }
 
         async function cargarConsultas() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) return;
+            
             try {
-                const r = await fetch('/api/admin/consultas?limite=100', {credentials: 'include'});
+                const r = await fetch('/api/admin/consultas?limite=100', {
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
                 if (r.ok) {
                     const data = await r.json();
                     datos = data.consultas || [];
@@ -726,6 +750,13 @@
 
         // ===== SUBIR EXCEL =====
         async function subirExcel(tipo) {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) {
+                alert('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                window.location.href = '/login';
+                return;
+            }
+
             const input = document.getElementById(`excel-${tipo}`);
             const statusEl = document.getElementById(`status-${tipo}`);
             const file = input.files[0];
@@ -752,6 +783,9 @@
                 const response = await fetch('/api/admin/upload-excel', {
                     method: 'POST',
                     credentials: 'include',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
                     body: formData
                 });
 
@@ -871,6 +905,13 @@
 
         // ===== PRUEBA DE CORREO =====
         async function testCorreo() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) {
+                alert('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                window.location.href = '/login';
+                return;
+            }
+
             const statusEl = document.getElementById('test-status');
             const correo = prompt('📧 Ingresa tu correo para la prueba:');
             
@@ -886,7 +927,10 @@
             try {
                 const response = await fetch('/api/admin/test-correo', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
                     credentials: 'include',
                     body: JSON.stringify({ destinatario: correo })
                 });
@@ -907,6 +951,13 @@
 
         // ===== ENVIAR CORREOS CON FILTRO =====
         async function enviarCorreosFiltro() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) {
+                alert('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                window.location.href = '/login';
+                return;
+            }
+
             const asunto = document.getElementById('asunto-filtro').value.trim();
             const datos = document.getElementById('datos-filtro').value.trim();
             const statusEl = document.getElementById('status-filtro');
@@ -997,7 +1048,10 @@
             try {
                 const response = await fetch('/api/admin/enviar-correos-pegados', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
                     credentials: 'include',
                     body: JSON.stringify({ asunto, destinatarios: items })
                 });
@@ -1034,6 +1088,13 @@
 
         // ===== ENVIAR CORREOS SIN FILTRO =====
         async function enviarCorreosSinFiltro() {
+            const token = localStorage.getItem('jwt_token');
+            if (!token) {
+                alert('Sesión expirada. Por favor, inicia sesión de nuevo.');
+                window.location.href = '/login';
+                return;
+            }
+
             const asunto = document.getElementById('asunto-sin-filtro').value.trim();
             const correosRaw = document.getElementById('correos-sin-filtro').value.trim();
             const plantilla = document.getElementById('plantilla-sin-filtro').value;
@@ -1083,7 +1144,10 @@
             try {
                 const response = await fetch('/api/admin/enviar-correos-sin-filtro', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
                     credentials: 'include',
                     body: JSON.stringify({ asunto, destinatarios: correos, plantilla })
                 });
@@ -1117,10 +1181,19 @@
         }
 
         async function logout() {
+            const token = localStorage.getItem('jwt_token');
             try {
-                await fetch('/api/admin/logout', {method: 'POST', credentials: 'include'});
+                await fetch('/api/admin/logout', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
             } catch (e) { console.error(e); }
-            localStorage.removeItem('isLoggedIn');
+            
+            localStorage.removeItem('jwt_token');
             localStorage.removeItem('userRole');
             localStorage.removeItem('userName');
             window.location.href = '/login';

@@ -19,8 +19,8 @@
     <header class="header" style="display: none;" id="header-content">
         <div class="header-content">
             <button class="theme-toggle" id="themeToggle" title="Cambiar modo claro/oscuro">
-    🌙
-</button>
+                🌙
+            </button>
             <div>
                 <h1>📊 Panel Supervisora</h1>
                 <p>Análisis y métricas de contratistas</p>
@@ -115,9 +115,19 @@
         async function verificarSesion() {
             console.log('🔍 Verificando sesión para supervisor...');
             
+            const token = localStorage.getItem('jwt_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+            
             try {
                 const r = await fetch('/api/supervisor/dashboard', {
-                    credentials: 'include'
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
                 });
                 
                 console.log('📥 Status del dashboard:', r.status);
@@ -128,8 +138,9 @@
                     mostrarDashboard(data);
                 } else if (r.status === 401) {
                     console.log('❌ No autorizado, redirigiendo a login');
-                    localStorage.removeItem('isLoggedIn');
+                    localStorage.removeItem('jwt_token');
                     localStorage.removeItem('userRole');
+                    localStorage.removeItem('userName');
                     window.location.href = '/login';
                 } else {
                     // Error del servidor (500, etc.)
@@ -270,11 +281,21 @@
         }
 
         async function logout() {
+            const token = localStorage.getItem('jwt_token');
             try {
-                await fetch('/api/admin/logout', {method: 'POST', credentials: 'include'});
+                await fetch('/api/admin/logout', {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Authorization': 'Bearer ' + token,
+                        'Content-Type': 'application/json'
+                    }
+                });
             } catch (e) {}
-            localStorage.removeItem('isLoggedIn');
+            
+            localStorage.removeItem('jwt_token');
             localStorage.removeItem('userRole');
+            localStorage.removeItem('userName');
             window.location.href = '/login';
         }
     </script>
