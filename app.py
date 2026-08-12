@@ -964,6 +964,8 @@ def validar_rut():
     print(f"🆔 Cédula: {cedula}")
     
     # ... resto del código
+
+
 # ==================== LOGIN CON BCRYPT Y RATE LIMITING ====================
 @app.route('/api/admin/logout', methods=['POST'])
 @admin_required
