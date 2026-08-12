@@ -932,11 +932,13 @@ def feedback():
         return jsonify({'error': str(e)}), 500
 
 # ==================== VALIDAR RUT ====================
+# ==================== VALIDAR RUT ====================
 @app.route('/api/validar-rut', methods=['POST'])
 def validar_rut():
-    print("🚀 Entrando a validar_rut()")
     from werkzeug.utils import secure_filename
-    from contratacion.validador_rut import validar_rut_archivo    
+    from contratacion.validador_rut import validar_rut_archivo
+    
+    print("🚀 Entrando a validar_rut()")
     
     archivo = None
     for key in ['archivo', 'rut', 'file']:
@@ -963,8 +965,72 @@ def validar_rut():
     cedula = request.form.get('cedula', '').strip()
     print(f"🆔 Cédula: {cedula}")
     
-    # ... resto del código
-
+    contratista_info = None
+    if cedula:
+        try:
+            registros = lector.buscar_por_cedula(cedula)
+            if registros:
+                contratista_info = lector.obtener_info_contratista(registros[0])
+        except:
+            pass
+    
+    UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    
+    nombre_seguro = secure_filename(archivo.filename)
+    ruta_archivo = os.path.join(UPLOAD_DIR, nombre_seguro)
+    archivo.save(ruta_archivo)
+    
+    # VARIABLE PARA GUARDAR EL RESULTADO
+    resultado_json = None
+    respuesta_texto = None
+    error_msg = None
+    
+    try:
+        # Llamar al validador
+        respuesta_texto, resultado = validar_rut_archivo(ruta_archivo, cedula)
+        
+        if contratista_info:
+            resultado['datos_extraidos']['nombre_contratista'] = contratista_info.get('nombre')
+            resultado['datos_extraidos']['cedula_contratista'] = contratista_info.get('cedula')
+        
+        # Eliminar el archivo temporal
+        try:
+            os.remove(ruta_archivo)
+        except:
+            pass
+        
+        # Construir la respuesta JSON
+        resultado_json = {
+            'success': True,
+            'valido': resultado['valido'],
+            'datos': resultado['datos_extraidos'],
+            'errores': resultado['errores'],
+            'advertencias': resultado['advertencias'],
+            'exitos': resultado['exitos'],
+            'respuesta': respuesta_texto,
+            'archivo_procesado': archivo.filename
+        }
+        
+    except Exception as e:
+        print(f"❌ Error en validar_rut(): {e}")
+        # Eliminar el archivo temporal si existe
+        try:
+            os.remove(ruta_archivo)
+        except:
+            pass
+        
+        resultado_json = {
+            'success': False,
+            'error': f'Error al procesar el RUT: {str(e)}'
+        }
+        error_msg = str(e)
+    
+    # SIEMPRE devolver un JSON, incluso si hubo error
+    if error_msg:
+        return jsonify(resultado_json), 500
+    else:
+        return jsonify(resultado_json)
 
 # ==================== LOGIN CON BCRYPT Y RATE LIMITING ====================
 @app.route('/api/admin/logout', methods=['POST'])
