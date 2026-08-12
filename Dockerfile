@@ -1,6 +1,3 @@
-# Forzar la instalación de OpenCV con pip
-RUN pip install opencv-python-headless==4.10.0.84
-
 FROM python:3.12-slim
 
 WORKDIR /app
@@ -9,11 +6,18 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     poppler-utils \
     libgl1 \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
+# Copia requirements.txt y instala dependencias
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copia el resto del código
 COPY . .
 
 EXPOSE 5000
