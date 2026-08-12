@@ -1,3 +1,6 @@
+# Forzar la instalación de OpenCV con pip
+RUN pip install opencv-python-headless==4.10.0.84
+
 FROM python:3.12-slim
 
 WORKDIR /app
