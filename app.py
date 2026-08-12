@@ -934,6 +934,7 @@ def feedback():
 # ==================== VALIDAR RUT ====================
 @app.route('/api/validar-rut', methods=['POST'])
 def validar_rut():
+    print("🚀 Entrando a validar_rut()")
     from werkzeug.utils import secure_filename
     from contratacion.validador_rut import validar_rut_archivo    
     
@@ -944,67 +945,25 @@ def validar_rut():
             break
     
     if archivo is None or archivo.filename == '':
+        print("❌ No se envió archivo")
         return jsonify({
             'success': False,
             'error': 'No se envió ningún archivo. Selecciona tu RUT en PDF.'
         }), 400
     
+    print(f"📄 Archivo recibido: {archivo.filename}")
+    
     if not archivo.filename.lower().endswith('.pdf'):
+        print("❌ No es PDF")
         return jsonify({
             'success': False,
             'error': 'Solo se aceptan archivos PDF.'
         }), 400
     
     cedula = request.form.get('cedula', '').strip()
+    print(f"🆔 Cédula: {cedula}")
     
-    contratista_info = None
-    if cedula:
-        try:
-            registros = lector.buscar_por_cedula(cedula)
-            if registros:
-                contratista_info = lector.obtener_info_contratista(registros[0])
-        except:
-            pass
-    
-    UPLOAD_DIR = os.path.join(BASE_DIR, 'uploads')
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    
-    nombre_seguro = secure_filename(archivo.filename)
-    ruta_archivo = os.path.join(UPLOAD_DIR, nombre_seguro)
-    archivo.save(ruta_archivo)
-    
-    try:
-        respuesta, resultado = validar_rut_archivo(ruta_archivo, cedula)
-        
-        if contratista_info:
-            resultado['datos_extraidos']['nombre_contratista'] = contratista_info.get('nombre')
-            resultado['datos_extraidos']['cedula_contratista'] = contratista_info.get('cedula')
-        
-        try:
-            os.remove(ruta_archivo)
-        except:
-            pass
-        
-        return jsonify({
-            'success': True,
-            'valido': resultado['valido'],
-            'datos': resultado['datos_extraidos'],
-            'errores': resultado['errores'],
-            'advertencias': resultado['advertencias'],
-            'exitos': resultado['exitos'],
-            'respuesta': respuesta,
-            'archivo_procesado': archivo.filename
-        })
-    except Exception as e:
-        try:
-            os.remove(ruta_archivo)
-        except:
-            pass
-        return jsonify({
-            'success': False,
-            'error': f'Error al procesar el RUT: {str(e)}'
-        }), 500
-
+    # ... resto del código
 # ==================== LOGIN CON BCRYPT Y RATE LIMITING ====================
 @app.route('/api/admin/logout', methods=['POST'])
 @admin_required

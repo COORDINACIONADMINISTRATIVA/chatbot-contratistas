@@ -276,11 +276,12 @@
                     resultadoRut.style.borderLeftColor = '#dc3545';
                 }
                 
-            } catch (error) {
-                console.error('Error subiendo RUT:', error);
-                statusEl.textContent = '❌ Error de conexión: ' + error.message;
-                statusEl.className = 'upload-status error';
-            }
+                } catch (error) {
+                    console.error('❌ Error completo:', error);
+                    console.log('📥 Respuesta del servidor (texto):', await response.text());
+                    statusEl.textContent = '❌ Error de conexión: ' + error.message;
+                    statusEl.className = 'upload-status error';
+                 }
             
             btnUpload.disabled = false;
             fileInput.value = '';
