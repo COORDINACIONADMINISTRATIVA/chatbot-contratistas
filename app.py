@@ -299,6 +299,10 @@ def supervisor_page():
 def validador_rut():
     return send_from_directory(FRONTEND_DIR, 'rut.html')
 
+@app.route('/ayuda')
+def ayuda():
+    return send_from_directory(FRONTEND_DIR, 'ayuda.html')
+
 # ==================== PRUEBA DE CORREO ====================
 @app.route('/api/admin/test-correo', methods=['POST'])
 @admin_required
@@ -1270,6 +1274,11 @@ def supervisor_dashboard():
         traceback.print_exc()
         return jsonify({'error': str(e)}), 500
 
+# ==================== RUTA PARA VERIFICACIÓN DE LOADER.IO ====================
+@app.route('/loaderio-88fffffacc53651bbe82d4b26f23283e.txt')
+def loaderio_verification():
+    return send_from_directory(FRONTEND_DIR, 'loaderio-88fffffacc53651bbe82d4b26f23283e.txt')
+
 # ==================== SUBIR EXCEL SIN REDEPLOY ====================
 @app.route('/api/admin/upload-excel', methods=['POST'])
 @admin_required
@@ -1349,6 +1358,7 @@ if __name__ == '__main__':
     print("Chat:         http://localhost:5000")
     print("Consultas:    http://localhost:5000/consultas")
     print("Buscar:       http://localhost:5000/buscar")
+    print("Ayuda:        http://localhost:5000/ayuda")
     print("Login:        http://localhost:5000/login")
     print("Admin:        http://localhost:5000/admin")
     print("Supervisor:   http://localhost:5000/supervisor")
