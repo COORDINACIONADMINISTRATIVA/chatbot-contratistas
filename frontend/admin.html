@@ -492,7 +492,10 @@
 
         async function verificarSesion() {
             const token = localStorage.getItem('jwt_token');
+            console.log('🔑 Token recuperado:', token);
+            
             if (!token) {
+                console.log('❌ No hay token, redirigiendo a login');
                 window.location.href = '/login';
                 return;
             }
@@ -507,11 +510,13 @@
                     }
                 });
                 
+                console.log('📥 Status de la petición:', r.status);
+                
                 if (r.ok) {
                     stats = await r.json();
                     mostrarDashboard();
                 } else if (r.status === 401) {
-                    console.log('Sesión expirada');
+                    console.log('❌ Token inválido o expirado');
                     localStorage.removeItem('jwt_token');
                     localStorage.removeItem('userRole');
                     localStorage.removeItem('userName');
@@ -520,12 +525,17 @@
                     mostrarError('Error al cargar: ' + r.status);
                 }
             } catch (e) {
-                console.error('Error:', e);
+                console.error('❌ Error de conexión:', e);
                 mostrarError('Error de conexión');
             }
         }
 
         function mostrarDashboard() {
+            if (!stats) {
+                console.error('❌ stats no está definido');
+                return;
+            }
+
             document.getElementById('loading').style.display = 'none';
             document.getElementById('header-content').style.display = 'block';
             document.getElementById('tabs-content').style.display = 'block';
@@ -542,7 +552,10 @@
         }
 
         function actualizarVista() {
-            if (!stats) return;
+            if (!stats) {
+                console.error('❌ stats no está definido en actualizarVista');
+                return;
+            }
             
             try {
                 document.getElementById('statTotal').textContent = stats.total_consultas || 0;

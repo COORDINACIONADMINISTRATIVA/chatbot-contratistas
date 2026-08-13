@@ -59,24 +59,33 @@
                 if (data.success) {
                     console.log('✅ Login exitoso');
                     
-                    // Guardar el token
+                    // Guardar el token PRIMERO
                     localStorage.setItem('jwt_token', data.token);
                     localStorage.setItem('userRole', data.admin.rol);
                     localStorage.setItem('userName', data.admin.nombre);
                     
-                    console.log('✅ Token guardado en localStorage:', localStorage.getItem('jwt_token'));
+                    // VERIFICAR QUE EL TOKEN SE GUARDÓ
+                    const tokenGuardado = localStorage.getItem('jwt_token');
+                    console.log('🔍 Token guardado en localStorage:', tokenGuardado);
+                    
+                    if (!tokenGuardado) {
+                        console.error('❌ El token no se guardó en localStorage');
+                        errorMsg.style.color = '#dc3545';
+                        errorMsg.textContent = '❌ Error: El token no se guardó correctamente. Intenta de nuevo.';
+                        return;
+                    }
                     
                     errorMsg.style.color = '#28a745';
                     errorMsg.textContent = '✅ Redirigiendo...';
                     
-                    // Esperar 1 segundo para asegurar que el token se guarde
+                    // REDIRIGIR DESPUÉS DE VERIFICAR EL TOKEN
                     setTimeout(() => {
                         if (data.admin.rol === 'supervisor') {
                             window.location.href = '/supervisor';
                         } else {
                             window.location.href = '/admin';
                         }
-                    }, 1000);
+                    }, 500);
                 } else {
                     errorMsg.style.color = '#dc3545';
                     errorMsg.textContent = '❌ ' + (data.error || 'Credenciales incorrectas');

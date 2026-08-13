@@ -107,16 +107,18 @@
     <script>
         let chartEstados = null, chartCategorias = null, chartProblemas = null, chartAnios = null;
         let chartEstadosSolpedido = null;
+        let dashboardData = null;
 
         window.addEventListener('DOMContentLoaded', function() {
             verificarSesion();
         });
 
         async function verificarSesion() {
-            console.log('🔍 Verificando sesión para supervisor...');
-            
             const token = localStorage.getItem('jwt_token');
+            console.log('🔑 Token recuperado:', token);
+            
             if (!token) {
+                console.log('❌ No hay token, redirigiendo a login');
                 window.location.href = '/login';
                 return;
             }
@@ -130,21 +132,19 @@
                     }
                 });
                 
-                console.log('📥 Status del dashboard:', r.status);
+                console.log('📥 Status de la petición:', r.status);
                 
                 if (r.ok) {
-                    const data = await r.json();
-                    console.log('📊 Datos recibidos:', data);
-                    mostrarDashboard(data);
+                    dashboardData = await r.json();
+                    mostrarDashboard(dashboardData);
                 } else if (r.status === 401) {
-                    console.log('❌ No autorizado, redirigiendo a login');
+                    console.log('❌ Token inválido o expirado');
                     localStorage.removeItem('jwt_token');
                     localStorage.removeItem('userRole');
                     localStorage.removeItem('userName');
                     window.location.href = '/login';
                 } else {
-                    // Error del servidor (500, etc.)
-                    mostrarError('Error al cargar datos del supervisor (código ' + r.status + ')');
+                    mostrarError('Error al cargar: ' + r.status);
                 }
             } catch (e) {
                 console.error('❌ Error de red:', e);
@@ -153,6 +153,9 @@
         }
 
         function mostrarDashboard(data) {
+            // Guardar los datos globalmente para las gráficas
+            dashboardData = data;
+
             // Ocultar loading y mostrar contenido
             document.getElementById('loading').style.display = 'none';
             document.getElementById('header-content').style.display = 'block';

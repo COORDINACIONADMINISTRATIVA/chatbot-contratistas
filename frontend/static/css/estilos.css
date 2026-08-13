@@ -149,9 +149,10 @@ body.dark-mode .theme-toggle:hover { background: rgba(255, 255, 255, 0.25); }
 
 /* ==================== HEADER ==================== */
 .header {
+    position: relative;
     background: var(--bg-header);
     color: white;
-    padding: 18px 30px;
+    padding: 16px 90px 16px 30px; /* espacio reservado a la derecha para el botón de tema fijo */
     box-shadow: 0 2px 15px rgba(0, 48, 135, 0.3);
     transition: background 0.3s ease;
 }
@@ -170,23 +171,26 @@ body.dark-mode .theme-toggle:hover { background: rgba(255, 255, 255, 0.25); }
     display: flex;
     align-items: center;
     gap: 15px;
+    min-width: 0; /* permite que el texto se trunque/ajuste en vez de empujar el logo */
 }
 
 .header-logo {
-    height: 45px;
+    height: 42px;
     width: auto;
+    flex-shrink: 0;
     filter: brightness(1) invert(0);
 }
 
 .header h1 {
-    font-size: 1.6em;
+    font-size: 1.5em;
     font-weight: 600;
     letter-spacing: -0.5px;
     margin-bottom: 2px;
+    line-height: 1.25;
 }
 
 .header p {
-    font-size: 0.9em;
+    font-size: 0.88em;
     opacity: 0.85;
     font-weight: 300;
 }
@@ -197,8 +201,15 @@ body.dark-mode .theme-toggle:hover { background: rgba(255, 255, 255, 0.25); }
     align-items: center;
 }
 
-/* ==================== BOTÓN DE MODO OSCURO ==================== */
+/* ==================== BOTÓN DE MODO OSCURO ====================
+   Se saca del flujo del header y se fija en la esquina superior
+   derecha, así nunca se encima con el logo/título sin importar
+   cuántos elementos tenga el header en cada página. */
 .theme-toggle {
+    position: absolute;
+    top: 50%;
+    right: 24px;
+    transform: translateY(-50%);
     background: rgba(255, 255, 255, 0.15);
     border: none;
     color: white;
@@ -211,11 +222,12 @@ body.dark-mode .theme-toggle:hover { background: rgba(255, 255, 255, 0.25); }
     align-items: center;
     justify-content: center;
     transition: background 0.2s, transform 0.2s;
+    z-index: 20;
 }
 
 .theme-toggle:hover {
     background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
+    transform: translateY(-50%) scale(1.05);
 }
 
 /* ==================== TABS ==================== */
@@ -278,6 +290,67 @@ body.dark-mode .theme-toggle:hover { background: rgba(255, 255, 255, 0.25); }
     margin: 0 auto;
     padding: 25px 20px;
     min-height: calc(100vh - 220px);
+}
+
+/* ==================== NAV VERTICAL (ESCRITORIO) ====================
+   A partir de 901px, la barra de tabs deja de ser horizontal arriba
+   y se convierte en un menú vertical fijo al lado izquierdo. Header,
+   contenido y footer se desplazan para dejarle espacio. Por debajo
+   de 901px se mantiene la barra horizontal original (mejor para
+   pantallas angostas).
+   IMPORTANTE: este bloque va DESPUÉS de la regla base ".container"
+   de arriba a propósito. Si va antes, la regla base (que trae
+   "margin: 0 auto") pisa el "margin-left: 230px" de aquí y el
+   contenido queda escondido debajo del sidebar — por eso se veía
+   "recortado". CSS: a igual especificidad, gana la que esté más
+   abajo en el archivo. */
+@media (min-width: 901px) {
+    .tabs {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 230px;
+        height: 100vh;
+        padding: 22px 14px;
+        border-bottom: none;
+        border-right: 2px solid var(--border-color);
+        box-shadow: 2px 0 12px rgba(0,0,0,0.04);
+        overflow-y: auto;
+        z-index: 50;
+    }
+
+    .tabs-container {
+        flex-direction: column;
+        align-items: stretch;
+        min-width: 0;
+        gap: 6px;
+    }
+
+    .tab {
+        border-bottom: none;
+        border-left: 4px solid transparent;
+        border-radius: 8px;
+        padding: 13px 16px;
+    }
+
+    .tab.active {
+        border-bottom-color: transparent;
+        border-left-color: var(--azul-uniminuto);
+        background: var(--hover-bg);
+    }
+
+    .tab-admin {
+        margin-left: 0;
+        margin-top: auto;
+        border-top: 1px solid var(--border-color);
+        padding-top: 16px;
+    }
+
+    .header,
+    .container,
+    .footer {
+        margin-left: 230px;
+    }
 }
 
 .main-content {
@@ -959,6 +1032,9 @@ body.dark-mode .message-content .link:hover {
 
 /* ==================== RESPONSIVE ==================== */
 @media (max-width: 768px) {
+    .header {
+        padding: 14px 60px 14px 15px;
+    }
     .header-content {
         flex-direction: column;
         text-align: center;
@@ -969,6 +1045,17 @@ body.dark-mode .message-content .link:hover {
     }
     .header h1 {
         font-size: 1.3em;
+    }
+    .theme-toggle {
+        top: 16px;
+        right: 15px;
+        transform: none;
+        width: 34px;
+        height: 34px;
+        font-size: 1.05em;
+    }
+    .theme-toggle:hover {
+        transform: scale(1.05);
     }
     .tabs {
         padding: 0 10px;

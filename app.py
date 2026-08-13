@@ -101,7 +101,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from database.db import get_connection, init_db
 from chatbot.orquestador import responder
 from contratacion.lector import lector
-from contratacion.intérprete import traducir_observacion, traducir_estado
+from contratacion.interprete import traducir_observacion, traducir_estado
 
 def generar_token(usuario_id, usuario_nombre, rol):
     """
@@ -244,11 +244,29 @@ init_db()
 login_attempts = defaultdict(list)
 
 # ==================== DECORADOR ADMIN_REQUIRED ====================
+# NOTA: antes revisaba session['admin_id'], pero el login solo genera un
+# JWT (localStorage + header Authorization) y nunca toca la sesión de
+# Flask. Esa desconexión hacía que TODAS las rutas admin/supervisor
+# devolvieran 401 aunque el token fuera válido, y el frontend te mandaba
+# de vuelta a /login apenas entrabas. Ahora valida el token, igual que
+# jwt_required, y además deja el payload disponible en request.jwt_payload
+# por si la ruta necesita saber quién es o su rol.
 def admin_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        if 'admin_id' not in session:
+        token = None
+        auth_header = request.headers.get('Authorization')
+        if auth_header and auth_header.startswith('Bearer '):
+            token = auth_header.split(' ')[1]
+
+        if not token:
             return jsonify({'error': 'No autorizado'}), 401
+
+        payload = verificar_token(token)
+        if not payload:
+            return jsonify({'error': 'Token inválido o expirado'}), 401
+
+        request.jwt_payload = payload
         return f(*args, **kwargs)
     return decorated
 
