@@ -27,10 +27,14 @@ from flask import request, jsonify
 from dotenv import load_dotenv
 import re
 from datetime import datetime
+import logging
 
 load_dotenv()
 
 JWT_SECRET_KEY = os.environ.get('JWT_SECRET_KEY', 'clave_por_defecto_solo_para_desarrollo')
+
+logging.basicConfig(level=logging.INFO)
+
 
 # ==================== FUNCIÓN PARA LIMPIAR EL OBJETO DEL CONTRATO ====================
 def limpiar_objeto(objeto):
@@ -338,6 +342,12 @@ def test_correo():
             'success': False,
             'error': mensaje
         }), 500
+
+@app.before_request
+def log_request_info():
+    if request.path == '/api/chat':
+        print(f"📥 CHAT REQUEST: {request.method} {request.path}")
+        print(f"📦 Body: {request.get_json()}")
 
 # ==================== ENVÍO DE CORREOS (COPIAR Y PEGAR - CON FILTRO) ====================
 @app.route('/api/admin/enviar-correos-pegados', methods=['POST'])
